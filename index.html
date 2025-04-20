@@ -7,14 +7,14 @@
   <style>
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: url('https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=1950&q=80') no-repeat center center fixed;
-      background-size: cover;
+      background: linear-gradient(to right, #0f2027, #203a43, #2c5364);
       color: #ffffff;
       margin: 0;
       padding: 0;
+      transition: background-color 0.5s ease;
     }
     header {
-      background: rgba(0, 212, 255, 0.9);
+      background: #00d4ff;
       padding: 1rem;
       text-align: center;
       font-size: 1.5rem;
@@ -26,11 +26,11 @@
       margin: 0 auto;
       padding: 1rem;
     }
-    .video-feed, .controls, .log-area, .interaction-box, .status-panel, .mode-selector, .face-ui, .data-log {
+    .video-feed, .controls, .log-area, .interaction-box, .status-panel, .mode-selector {
       margin-top: 1.5rem;
       padding: 1rem;
       border-radius: 10px;
-      background: rgba(0, 0, 0, 0.5);
+      background: rgba(255, 255, 255, 0.05);
       backdrop-filter: blur(5px);
     }
     video {
@@ -48,7 +48,7 @@
       cursor: pointer;
       border-radius: 5px;
     }
-    .log-area pre, .data-log pre {
+    .log-area pre {
       white-space: pre-wrap;
       word-wrap: break-word;
       font-size: 0.95rem;
@@ -73,20 +73,11 @@
       border-radius: 5px;
       text-align: center;
     }
-    .face-ui {
-      text-align: center;
-      font-size: 3rem;
-    }
   </style>
 </head>
 <body>
   <header>ROZ - Smart AI Robot Dashboard</header>
   <div class="container">
-
-    <!-- ROZ Robot Face -->
-    <div class="face-ui" id="robotFace">
-      😐
-    </div>
 
     <!-- Webcam Feed -->
     <div class="video-feed">
@@ -129,12 +120,6 @@
       <h3>Logs & Messages</h3>
       <pre id="log">Waiting for ROZ...</pre>
     </div>
-
-    <!-- Data Logging Panel -->
-    <div class="data-log">
-      <h3>Activity History</h3>
-      <pre id="dataLog"></pre>
-    </div>
   </div>
 
   <script>
@@ -145,29 +130,9 @@
       })
       .catch(err => console.error("Camera access denied:", err));
 
-    // Robot expressions
-    const faceUI = document.getElementById("robotFace");
-
-    // Speech feedback
-    function speak(text) {
-      const utterance = new SpeechSynthesisUtterance(text);
-      utterance.lang = 'en-IN';
-      speechSynthesis.speak(utterance);
-    }
-
-    // Send movement command
+    // Send movement command (replace with actual logic)
     function sendCommand(cmd) {
-      let msg = '';
-      switch (cmd) {
-        case 'F': msg = 'Moving forward'; faceUI.textContent = '😃'; break;
-        case 'B': msg = 'Reversing'; faceUI.textContent = '😮'; break;
-        case 'L': msg = 'Turning left'; faceUI.textContent = '😉'; break;
-        case 'R': msg = 'Turning right'; faceUI.textContent = '😏'; break;
-        case 'S': msg = 'Stopping'; faceUI.textContent = '😐'; break;
-      }
-      log(msg);
-      speak(msg);
-      logActivity(`[RC] ${msg}`);
+      log(`Command sent: ${cmd}`);
     }
 
     // Set mode and update UI
@@ -175,32 +140,27 @@
       const currentMode = document.getElementById("currentMode");
       const interaction = document.getElementById("interactionBox");
       let message = '';
-      let expression = '😎';
+      let backgroundColor = '';
 
       switch(mode) {
         case 'home':
           message = 'Now in Home Guard Mode: Monitoring surroundings.';
-          document.body.style.backgroundImage = "url('https://images.unsplash.com/photo-1581091012184-4c4f50dcd4f0?auto=format&fit=crop&w=1350&q=80')";
-          expression = '🧐';
+          backgroundColor = '#2c3e50';  // Security blue
           break;
         case 'farm':
           message = 'Now in Farm Mode: Checking crop status and analysis.';
-          document.body.style.backgroundImage = "url('https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?auto=format&fit=crop&w=1350&q=80')";
-          expression = '🌾';
+          backgroundColor = '#2ecc71';  // Nature green
           break;
         case 'family':
           message = 'Now in Family Mode: Educational & Care Assistant Activated.';
-          document.body.style.backgroundImage = "url('https://images.unsplash.com/photo-1616627980795-5fced3e93c95?auto=format&fit=crop&w=1350&q=80')";
-          expression = '😊';
+          backgroundColor = '#f39c12';  // Bright, friendly yellow
           break;
       }
 
-      faceUI.textContent = expression;
+      log(message);
       interaction.innerHTML = `[ROZ]: ${message}`;
       currentMode.textContent = `Mode: ${mode.toUpperCase()}`;
-      log(message);
-      speak(message);
-      logActivity(`[MODE] ${mode.toUpperCase()} selected`);
+      document.body.style.background = backgroundColor;  // Change background color
     }
 
     // Log printer
@@ -208,12 +168,6 @@
       const logEl = document.getElementById("log");
       const now = new Date().toLocaleTimeString();
       logEl.textContent = `[${now}] ${msg}\n` + logEl.textContent;
-    }
-
-    function logActivity(entry) {
-      const activityEl = document.getElementById("dataLog");
-      const now = new Date().toLocaleTimeString();
-      activityEl.textContent = `[${now}] ${entry}\n` + activityEl.textContent;
     }
   </script>
 </body>
