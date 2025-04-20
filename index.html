@@ -7,14 +7,14 @@
   <style>
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background-color: #f4f4f9; /* Light background for a cleaner look */
+      background-color: #f4f4f9;
       color: #333;
       margin: 0;
       padding: 0;
       transition: background-color 0.5s ease;
     }
     header {
-      background-color: #00bcd4; /* A fresh, modern color for the header */
+      background-color: #00bcd4;
       padding: 1rem;
       text-align: center;
       font-size: 1.5rem;
@@ -141,6 +141,7 @@
     // Send movement command (replace with actual logic)
     function sendCommand(cmd) {
       log(`Command sent: ${cmd}`);
+      speak(`Command sent: ${cmd}`);
     }
 
     // Set mode and update UI
@@ -166,6 +167,7 @@
       }
 
       log(message);
+      speak(message);  // Speak the mode change message
       interaction.innerHTML = `[ROZ]: ${message}`;
       currentMode.textContent = `Mode: ${mode.toUpperCase()}`;
       document.body.style.backgroundColor = backgroundColor;  // Change background color
@@ -176,6 +178,16 @@
       const logEl = document.getElementById("log");
       const now = new Date().toLocaleTimeString();
       logEl.textContent = `[${now}] ${msg}\n` + logEl.textContent;
+    }
+
+    // Speech Synthesis (Voice Feedback)
+    function speak(text) {
+      const speech = new SpeechSynthesisUtterance(text);
+      speech.lang = 'en-US'; // Set language
+      speech.pitch = 1; // Set pitch
+      speech.rate = 1;  // Set speed of speech
+      speech.volume = 1; // Set volume
+      window.speechSynthesis.speak(speech);
     }
   </script>
 </body>
