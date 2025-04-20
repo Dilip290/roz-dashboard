@@ -6,125 +6,119 @@
   <title>ROZ - Smart AI Robot</title>
   <style>
     body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       margin: 0;
       padding: 0;
-      transition: background 1s, color 1s;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      color: #ffffff;
+      background: linear-gradient(-45deg, #0f2027, #203a43, #2c5364, #1c1c1c);
+      background-size: 400% 400%;
+      animation: gradientShift 15s ease infinite;
     }
 
-    /* Home Guard (Security/Professional) */
-    .home-theme {
-      background: #2a2a2a;
-      color: #fff;
-    }
-
-    .home-theme header {
-      background: #ff4500;
-    }
-
-    /* Farm Mode (Nature/Green) */
-    .farm-theme {
-      background: #85bb65; /* Green */
-      color: #000;
-    }
-
-    .farm-theme header {
-      background: #228b22; /* Dark Green */
-    }
-
-    /* Family Mode (Colorful/Happy) */
-    .family-theme {
-      background: #ffcc00; /* Yellow */
-      color: #000;
-    }
-
-    .family-theme header {
-      background: #ff6347; /* Tomato */
+    @keyframes gradientShift {
+      0% {background-position: 0% 50%;}
+      50% {background-position: 100% 50%;}
+      100% {background-position: 0% 50%;}
     }
 
     header {
       background: #00d4ff;
+      color: #000;
       padding: 1rem;
       text-align: center;
-      font-size: 1.5rem;
+      font-size: 1.7rem;
       font-weight: bold;
-      color: #000;
+      text-shadow: 1px 1px 3px #fff;
     }
 
     .container {
       max-width: 1200px;
       margin: 0 auto;
-      padding: 1rem;
+      padding: 1.5rem;
     }
 
-    .video-feed, .controls, .log-area, .interaction-box, .status-panel, .mode-selector {
+    .section {
       margin-top: 1.5rem;
       padding: 1rem;
-      border-radius: 10px;
-      background: rgba(255, 255, 255, 0.05);
-      backdrop-filter: blur(5px);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.07);
+      backdrop-filter: blur(6px);
+      box-shadow: 0 0 15px rgba(0, 212, 255, 0.3);
+    }
+
+    h2, h3 {
+      margin-top: 0;
     }
 
     video {
       width: 100%;
+      border-radius: 12px;
       border: 2px solid #00d4ff;
-      border-radius: 10px;
     }
 
-    .controls button, .mode-selector button {
-      margin: 0.25rem;
-      padding: 0.6rem 1.2rem;
+    button {
+      margin: 0.3rem;
+      padding: 0.6rem 1.4rem;
       border: none;
       background: #00d4ff;
       color: #000;
       font-weight: bold;
+      border-radius: 6px;
       cursor: pointer;
-      border-radius: 5px;
+      transition: all 0.2s ease;
     }
 
-    .log-area pre {
-      white-space: pre-wrap;
-      word-wrap: break-word;
-      font-size: 0.95rem;
+    button:hover {
+      background: #00b3d6;
+      box-shadow: 0 0 10px #00d4ff;
     }
 
     .interaction-box {
-      background: #1e1e1e;
+      background: #101010;
       color: #00ff99;
       font-family: monospace;
-      padding: 1rem;
-      height: 200px;
+      height: 180px;
       overflow-y: auto;
+      padding: 1rem;
+      border-radius: 10px;
     }
 
     .status-panel {
       display: flex;
-      justify-content: space-between;
       gap: 1rem;
+      margin-top: 1rem;
     }
 
     .status-item {
       flex: 1;
-      background: #2a2a2a;
-      padding: 0.5rem;
-      border-radius: 5px;
+      background: #292929;
+      border-radius: 8px;
+      padding: 0.7rem;
       text-align: center;
+      color: #00eaff;
+      font-weight: bold;
+      box-shadow: 0 0 6px rgba(0, 212, 255, 0.4);
+    }
+
+    pre {
+      white-space: pre-wrap;
+      word-break: break-word;
     }
   </style>
 </head>
 <body>
-  <header>ROZ - Smart AI Robot Dashboard</header>
+  <header>🧠 ROZ - Smart AI Robot Dashboard</header>
   <div class="container">
 
-    <!-- Webcam Feed -->
-    <div class="video-feed">
-      <h2>Live View</h2>
+    <!-- Webcam -->
+    <div class="section">
+      <h2>🔴 Live View</h2>
       <video id="video" autoplay playsinline muted></video>
     </div>
 
-    <!-- RC Movement Controls -->
-    <div class="controls">
-      <h2>Movement Control</h2>
+    <!-- RC Movement -->
+    <div class="section">
+      <h2>🎮 Movement Control</h2>
       <button onclick="sendCommand('F')">⬆ Forward</button>
       <button onclick="sendCommand('B')">⬇ Backward</button>
       <button onclick="sendCommand('L')">⬅ Left</button>
@@ -132,95 +126,65 @@
       <button onclick="sendCommand('S')">⏹ Stop</button>
     </div>
 
-    <!-- Mode Selector -->
-    <div class="mode-selector">
-      <h2>Switch Mode</h2>
+    <!-- Mode Switching -->
+    <div class="section">
+      <h2>🧠 Switch Mode</h2>
       <button onclick="setMode('home')">🏠 Home Guard</button>
       <button onclick="setMode('farm')">🌾 Farm Mode</button>
       <button onclick="setMode('family')">👨‍👩‍👧‍👦 Family Mode</button>
     </div>
 
-    <!-- System Status Panel -->
+    <!-- Status Panel -->
     <div class="status-panel">
-      <div class="status-item">Battery: 98%</div>
-      <div class="status-item">Network: Connected</div>
-      <div class="status-item" id="currentMode">Mode: None</div>
+      <div class="status-item">🔋 Battery: 98%</div>
+      <div class="status-item">📶 Network: Connected</div>
+      <div class="status-item" id="currentMode">🧭 Mode: NONE</div>
     </div>
 
-    <!-- ROZ Interaction Log -->
-    <div class="interaction-box" id="interactionBox">
-      [ROZ]: Hello! I'm ready to assist.
+    <!-- Interaction -->
+    <div class="section">
+      <h3>💬 ROZ Interaction Log</h3>
+      <div class="interaction-box" id="interactionBox">[ROZ]: Ready for action!</div>
     </div>
 
-    <!-- Log Area -->
-    <div class="log-area">
-      <h3>Logs & Messages</h3>
-      <pre id="log">Waiting for ROZ...</pre>
+    <!-- Logs -->
+    <div class="section">
+      <h3>📜 Logs & Messages</h3>
+      <pre id="log">Initializing ROZ...</pre>
     </div>
   </div>
 
   <script>
-    // Webcam
     navigator.mediaDevices.getUserMedia({ video: true })
       .then(stream => {
         document.getElementById("video").srcObject = stream;
       })
       .catch(err => console.error("Camera access denied:", err));
 
-    // Set mode and update UI (with theme)
+    function sendCommand(cmd) {
+      log(`Command sent: ${cmd}`);
+    }
+
     function setMode(mode) {
       const currentMode = document.getElementById("currentMode");
       const interaction = document.getElementById("interactionBox");
       let message = '';
-
-      // Remove existing theme classes
-      document.body.classList.remove('home-theme', 'farm-theme', 'family-theme');
-      
-      // Switch case to handle mode logic
       switch(mode) {
         case 'home':
-          message = 'Now in Home Guard Mode: Monitoring surroundings.';
-          document.body.classList.add('home-theme');
+          message = 'Now in Home Guard Mode: Monitoring for intruders.';
           break;
         case 'farm':
-          message = 'Now in Farm Mode: Checking crop status and analysis.';
-          document.body.classList.add('farm-theme');
+          message = 'Now in Farm Mode: Analyzing crops and environment.';
           break;
         case 'family':
-          message = 'Now in Family Mode: Educational & Care Assistant Activated.';
-          document.body.classList.add('family-theme');
+          message = 'Now in Family Mode: Ready for fun, learning, and care.';
           break;
       }
-
-      log(message);  // Log the message to the log area
       interaction.innerHTML = `[ROZ]: ${message}`;
-      currentMode.textContent = `Mode: ${mode.toUpperCase()}`;
+      log(message);
+      currentMode.textContent = `🧭 Mode: ${mode.toUpperCase()}`;
     }
 
-    // Send movement command (Replace with actual logic in future)
-    function sendCommand(cmd) {
-      let commandMessage = '';
-      switch(cmd) {
-        case 'F':
-          commandMessage = 'Moving Forward';
-          break;
-        case 'B':
-          commandMessage = 'Moving Backward';
-          break;
-        case 'L':
-          commandMessage = 'Turning Left';
-          break;
-        case 'R':
-          commandMessage = 'Turning Right';
-          break;
-        case 'S':
-          commandMessage = 'Stopping';
-          break;
-      }
-      log(`Command sent: ${commandMessage}`);
-    }
-
-    // Log printer function
     function log(msg) {
       const logEl = document.getElementById("log");
       const now = new Date().toLocaleTimeString();
