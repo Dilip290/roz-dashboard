@@ -7,11 +7,41 @@
   <style>
     body {
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: linear-gradient(to right, #0f2027, #203a43, #2c5364);
-      color: #ffffff;
       margin: 0;
       padding: 0;
+      transition: background 1s, color 1s;
     }
+
+    /* Home Guard (Security/Professional) */
+    .home-theme {
+      background: #2a2a2a;
+      color: #fff;
+    }
+
+    .home-theme header {
+      background: #ff4500;
+    }
+
+    /* Farm Mode (Nature/Green) */
+    .farm-theme {
+      background: #85bb65; /* Green */
+      color: #000;
+    }
+
+    .farm-theme header {
+      background: #228b22; /* Dark Green */
+    }
+
+    /* Family Mode (Colorful/Happy) */
+    .family-theme {
+      background: #ffcc00; /* Yellow */
+      color: #000;
+    }
+
+    .family-theme header {
+      background: #ff6347; /* Tomato */
+    }
+
     header {
       background: #00d4ff;
       padding: 1rem;
@@ -20,11 +50,13 @@
       font-weight: bold;
       color: #000;
     }
+
     .container {
       max-width: 1200px;
       margin: 0 auto;
       padding: 1rem;
     }
+
     .video-feed, .controls, .log-area, .interaction-box, .status-panel, .mode-selector {
       margin-top: 1.5rem;
       padding: 1rem;
@@ -32,11 +64,13 @@
       background: rgba(255, 255, 255, 0.05);
       backdrop-filter: blur(5px);
     }
+
     video {
       width: 100%;
       border: 2px solid #00d4ff;
       border-radius: 10px;
     }
+
     .controls button, .mode-selector button {
       margin: 0.25rem;
       padding: 0.6rem 1.2rem;
@@ -47,11 +81,13 @@
       cursor: pointer;
       border-radius: 5px;
     }
+
     .log-area pre {
       white-space: pre-wrap;
       word-wrap: break-word;
       font-size: 0.95rem;
     }
+
     .interaction-box {
       background: #1e1e1e;
       color: #00ff99;
@@ -60,11 +96,13 @@
       height: 200px;
       overflow-y: auto;
     }
+
     .status-panel {
       display: flex;
       justify-content: space-between;
       gap: 1rem;
     }
+
     .status-item {
       flex: 1;
       background: #2a2a2a;
@@ -129,33 +167,60 @@
       })
       .catch(err => console.error("Camera access denied:", err));
 
-    // Send movement command (replace with actual logic)
-    function sendCommand(cmd) {
-      log(`Command sent: ${cmd}`);
-    }
-
-    // Set mode and update UI
+    // Set mode and update UI (with theme)
     function setMode(mode) {
       const currentMode = document.getElementById("currentMode");
       const interaction = document.getElementById("interactionBox");
       let message = '';
+
+      // Remove existing theme classes
+      document.body.classList.remove('home-theme', 'farm-theme', 'family-theme');
+      
+      // Switch case to handle mode logic
       switch(mode) {
         case 'home':
           message = 'Now in Home Guard Mode: Monitoring surroundings.';
+          document.body.classList.add('home-theme');
           break;
         case 'farm':
           message = 'Now in Farm Mode: Checking crop status and analysis.';
+          document.body.classList.add('farm-theme');
           break;
         case 'family':
           message = 'Now in Family Mode: Educational & Care Assistant Activated.';
+          document.body.classList.add('family-theme');
           break;
       }
-      log(message);
+
+      log(message);  // Log the message to the log area
       interaction.innerHTML = `[ROZ]: ${message}`;
       currentMode.textContent = `Mode: ${mode.toUpperCase()}`;
     }
 
-    // Log printer
+    // Send movement command (Replace with actual logic in future)
+    function sendCommand(cmd) {
+      let commandMessage = '';
+      switch(cmd) {
+        case 'F':
+          commandMessage = 'Moving Forward';
+          break;
+        case 'B':
+          commandMessage = 'Moving Backward';
+          break;
+        case 'L':
+          commandMessage = 'Turning Left';
+          break;
+        case 'R':
+          commandMessage = 'Turning Right';
+          break;
+        case 'S':
+          commandMessage = 'Stopping';
+          break;
+      }
+      log(`Command sent: ${commandMessage}`);
+    }
+
+    // Log printer function
     function log(msg) {
       const logEl = document.getElementById("log");
       const now = new Date().toLocaleTimeString();
