@@ -2,192 +2,147 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>ROZ - Smart AI Robot</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ROZ Dashboard</title>
   <style>
     body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background-color: #f4f4f9;
-      color: #333;
       margin: 0;
-      padding: 0;
-      transition: background-color 0.5s ease;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(to bottom right, #e3f2fd, #ffffff);
+      color: #333;
     }
     header {
-      background-color: #00bcd4;
+      background: #1976d2;
+      color: white;
       padding: 1rem;
       text-align: center;
-      font-size: 1.5rem;
-      font-weight: bold;
-      color: #ffffff;
-      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      font-size: 1.8rem;
     }
     .container {
-      max-width: 1200px;
-      margin: 0 auto;
-      padding: 2rem;
+      padding: 1rem;
     }
-    .video-feed, .controls, .log-area, .interaction-box, .status-panel, .mode-selector {
-      margin-top: 2rem;
-      padding: 1.5rem;
-      border-radius: 8px;
-      background: #ffffff;
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    .controls, .upload-section {
+      display: flex;
+      flex-direction: column;
+      margin-bottom: 2rem;
     }
-    video {
-      width: 100%;
-      border: 2px solid #00bcd4;
-      border-radius: 10px;
-    }
-    .controls button, .mode-selector button {
-      margin: 0.25rem;
-      padding: 0.8rem 1.5rem;
+    .controls button, .modes button {
+      padding: 1rem;
+      margin: 0.5rem;
       border: none;
-      background: #00bcd4;
-      color: #ffffff;
+      background: #2196f3;
+      color: white;
       font-weight: bold;
       cursor: pointer;
-      border-radius: 5px;
-      transition: background 0.3s ease;
+      border-radius: 10px;
     }
-    .controls button:hover, .mode-selector button:hover {
-      background: #008c9e;
+    .controls button:hover, .modes button:hover {
+      background: #1565c0;
     }
-    .log-area pre {
-      white-space: pre-wrap;
-      word-wrap: break-word;
-      font-size: 0.95rem;
+    .modes {
+      display: flex;
+      justify-content: space-around;
+      flex-wrap: wrap;
+      margin-top: 2rem;
     }
-    .interaction-box {
-      background: #f0f0f0;
-      color: #333;
-      font-family: monospace;
+    #logs {
+      background: #f1f1f1;
       padding: 1rem;
       height: 200px;
       overflow-y: auto;
-      border-radius: 8px;
-      border: 1px solid #ddd;
+      border-radius: 10px;
+      border: 1px solid #ccc;
     }
-    .status-panel {
-      display: flex;
-      justify-content: space-between;
-      gap: 1rem;
-    }
-    .status-item {
-      flex: 1;
-      background: #e0e0e0;
-      padding: 0.5rem;
-      border-radius: 5px;
-      text-align: center;
-      font-size: 1rem;
+    #uploadedImage {
+      max-width: 100%;
+      max-height: 300px;
+      margin-top: 1rem;
+      border: 2px solid #1976d2;
+      border-radius: 10px;
     }
   </style>
 </head>
 <body>
-  <header>ROZ - Smart AI Robot Dashboard</header>
+  <header>🤖 ROZ AI Robot Dashboard</header>
   <div class="container">
-
-    <!-- Webcam Feed -->
-    <div class="video-feed">
-      <h2>Live View</h2>
-      <video id="video" autoplay playsinline muted></video>
-    </div>
-
-    <!-- RC Movement Controls -->
+    
     <div class="controls">
-      <h2>Movement Control</h2>
-      <button onclick="sendCommand('F')">⬆ Forward</button>
-      <button onclick="sendCommand('B')">⬇ Backward</button>
-      <button onclick="sendCommand('L')">⬅ Left</button>
-      <button onclick="sendCommand('R')">➡ Right</button>
-      <button onclick="sendCommand('S')">⏹ Stop</button>
+      <h2>🎮 RC Controls</h2>
+      <div>
+        <button onclick="move('Forward')">⬆ Forward</button>
+        <button onclick="move('Left')">⬅ Left</button>
+        <button onclick="move('Stop')">⏹ Stop</button>
+        <button onclick="move('Right')">➡ Right</button>
+        <button onclick="move('Backward')">⬇ Backward</button>
+      </div>
     </div>
 
-    <!-- Mode Selector -->
-    <div class="mode-selector">
-      <h2>Switch Mode</h2>
-      <button onclick="setMode('home')">🏠 Home Guard</button>
-      <button onclick="setMode('farm')">🌾 Farm Mode</button>
-      <button onclick="setMode('family')">👨‍👩‍👧‍👦 Family Mode</button>
+    <div class="modes">
+      <button onclick="switchMode('Home Guard')">🛡 Home Guard</button>
+      <button onclick="switchMode('Farm')">🌾 Farm</button>
+      <button onclick="switchMode('Family')">👨‍👩‍👧‍👦 Family</button>
     </div>
 
-    <!-- System Status Panel -->
-    <div class="status-panel">
-      <div class="status-item">Battery: 98%</div>
-      <div class="status-item">Network: Connected</div>
-      <div class="status-item" id="currentMode">Mode: None</div>
+    <div class="upload-section">
+      <h2>📸 Upload Crop Image</h2>
+      <input type="file" id="imageInput" accept="image/*" onchange="handleImageUpload()"/>
+      <img id="uploadedImage" src="#" alt="Uploaded Image" style="display:none"/>
     </div>
 
-    <!-- ROZ Interaction Log -->
-    <div class="interaction-box" id="interactionBox">
-      [ROZ]: Hello! I'm ready to assist.
-    </div>
+    <h2>📋 Logs</h2>
+    <div id="logs"></div>
 
-    <!-- Log Area -->
-    <div class="log-area">
-      <h3>Logs & Messages</h3>
-      <pre id="log">Waiting for ROZ...</pre>
-    </div>
   </div>
 
   <script>
-    // Webcam
-    navigator.mediaDevices.getUserMedia({ video: true })
-      .then(stream => {
-        document.getElementById("video").srcObject = stream;
-      })
-      .catch(err => console.error("Camera access denied:", err));
+    const logs = document.getElementById('logs');
 
-    // Send movement command (replace with actual logic)
-    function sendCommand(cmd) {
-      log(`Command sent: ${cmd}`);
-      speak(`Command sent: ${cmd}`);
+    function logMessage(message) {
+      const entry = document.createElement('div');
+      entry.textContent = message;
+      logs.appendChild(entry);
+      logs.scrollTop = logs.scrollHeight;
+      speak(message);
     }
 
-    // Set mode and update UI
-    function setMode(mode) {
-      const currentMode = document.getElementById("currentMode");
-      const interaction = document.getElementById("interactionBox");
-      let message = '';
-      let backgroundColor = '';
-
-      switch(mode) {
-        case 'home':
-          message = 'Now in Home Guard Mode: Monitoring surroundings.';
-          backgroundColor = '#00796b';  // Greenish shade for Home Guard
-          break;
-        case 'farm':
-          message = 'Now in Farm Mode: Checking crop status and analysis.';
-          backgroundColor = '#388e3c';  // Rich green for Farm Mode
-          break;
-        case 'family':
-          message = 'Now in Family Mode: Educational & Care Assistant Activated.';
-          backgroundColor = '#ff5722';  // Friendly orange for Family Mode
-          break;
-      }
-
-      log(message);
-      speak(message);  // Speak the mode change message
-      interaction.innerHTML = `[ROZ]: ${message}`;
-      currentMode.textContent = `Mode: ${mode.toUpperCase()}`;
-      document.body.style.backgroundColor = backgroundColor;  // Change background color
-    }
-
-    // Log printer
-    function log(msg) {
-      const logEl = document.getElementById("log");
-      const now = new Date().toLocaleTimeString();
-      logEl.textContent = `[${now}] ${msg}\n` + logEl.textContent;
-    }
-
-    // Speech Synthesis (Voice Feedback)
     function speak(text) {
-      const speech = new SpeechSynthesisUtterance(text);
-      speech.lang = 'en-US'; // Set language
-      speech.pitch = 1; // Set pitch
-      speech.rate = 1;  // Set speed of speech
-      speech.volume = 1; // Set volume
-      window.speechSynthesis.speak(speech);
+      const msg = new SpeechSynthesisUtterance(text);
+      window.speechSynthesis.speak(msg);
+    }
+
+    function move(direction) {
+      logMessage(`ROZ: Moving ${direction}`);
+      // Add Bluetooth control logic later
+    }
+
+    function switchMode(mode) {
+      logMessage(`ROZ: Now in ${mode} mode`);
+      document.body.style.background = {
+        "Farm": "linear-gradient(to bottom right, #c8e6c9, #f1f8e9)",
+        "Home Guard": "linear-gradient(to bottom right, #e3f2fd, #bbdefb)",
+        "Family": "linear-gradient(to bottom right, #ffe0b2, #fff3e0)"
+      }[mode] || "#ffffff";
+    }
+
+    function handleImageUpload() {
+      const input = document.getElementById('imageInput');
+      const file = input.files[0];
+      const imgElement = document.getElementById('uploadedImage');
+
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          imgElement.src = e.target.result;
+          imgElement.style.display = 'block';
+          analyzeImageMock(file.name);
+        };
+        reader.readAsDataURL(file);
+      }
+    }
+
+    function analyzeImageMock(filename) {
+      const fakeResult = `Crop Image "${filename}" detected as: Tomato 🍅 — No disease found. Irrigation needed.`;
+      logMessage("ROZ: " + fakeResult);
     }
   </script>
 </body>
