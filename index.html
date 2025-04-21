@@ -150,7 +150,30 @@
           <img src="https://i.imgur.com/RvD5ClF.png" alt="Neem Spray Tip for Kids">
         `;
         log("Crop analysis complete. Tomato crop needs neem spray.");
-      }
+
+        const analysisData = {
+          timestamp: new Date().toISOString(),
+          cropType: "Tomato",
+          issue: "Blight Disease",
+          recommendation: "Use natural neem spray. Maintain good soil drainage."
+        };
+
+        fetch('https://api.github.com/repos/dilipbojaoek8/roz-dashboard/contents/data/crop_analysis.json', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer YOUR_GITHUB_TOKEN'
+          },
+          body: JSON.stringify({
+            message: `Add crop analysis log for ${analysisData.timestamp}`,
+            content: btoa(JSON.stringify(analysisData, null, 2)),
+            sha: null
+          })
+        })
+        .then(response => response.json())
+        .then(data => log("📝 Analysis data logged to GitHub."))
+        .catch(error => log("⚠️ Failed to log data to GitHub."));
+      };
       reader.readAsDataURL(file);
     }
 
