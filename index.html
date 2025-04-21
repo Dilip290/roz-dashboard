@@ -30,7 +30,7 @@
       border-radius: 10px;
     }
 
-    .controls, .modes, .upload-section {
+    .controls, .modes, .upload-section, .camera-toggle {
       text-align: center;
       margin: 1em;
     }
@@ -78,6 +78,10 @@
 <body>
   <header>🤖 ROZ Dashboard</header>
 
+  <div class="camera-toggle">
+    <button onclick="toggleCamera()" id="cameraToggle">🔴 Turn Camera Off</button>
+  </div>
+
   <video id="cameraFeed" autoplay playsinline></video>
 
   <div class="controls">
@@ -105,6 +109,9 @@
 
   <script>
     const logArea = document.getElementById("logs");
+    const video = document.getElementById("cameraFeed");
+    const toggleBtn = document.getElementById("cameraToggle");
+    let cameraStream;
 
     function log(msg) {
       logArea.innerHTML += `<p>ROZ: ${msg}</p>`;
@@ -118,13 +125,12 @@
     }
 
     function switchMode(mode) {
-      let theme = {
-        home: '#2c3e50',
-        farm: '#27ae60',
-        family: '#f39c12'
-      }[mode];
-
-      document.body.style.background = theme;
+      const themes = {
+        home: 'linear-gradient(to right, #1f4037, #99f2c8)',
+        farm: 'linear-gradient(to right, #a8e063, #56ab2f)',
+        family: 'linear-gradient(to right, #f7971e, #ffd200)'
+      };
+      document.body.style.background = themes[mode] || '#fff';
       log(`Now in ${mode} mode.`);
     }
 
@@ -148,12 +154,34 @@
       reader.readAsDataURL(file);
     }
 
-    // Enable live webcam
-    navigator.mediaDevices.getUserMedia({ video: true })
-      .then(stream => {
-        document.getElementById("cameraFeed").srcObject = stream;
-      })
-      .catch(err => log("Camera access denied."));
+    function startCamera() {
+      navigator.mediaDevices.getUserMedia({ video: true })
+        .then(stream => {
+          cameraStream = stream;
+          video.srcObject = stream;
+          toggleBtn.textContent = "🔴 Turn Camera Off";
+        })
+        .catch(err => log("Camera access denied."));
+    }
+
+    function stopCamera() {
+      if (cameraStream) {
+        cameraStream.getTracks().forEach(track => track.stop());
+        video.srcObject = null;
+        toggleBtn.textContent = "🟢 Turn Camera On";
+      }
+    }
+
+    function toggleCamera() {
+      if (video.srcObject) {
+        stopCamera();
+      } else {
+        startCamera();
+      }
+    }
+
+    // Start camera by default
+    startCamera();
   </script>
 </body>
 
