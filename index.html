@@ -4,6 +4,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#4CAF50">
+  <link rel="manifest" href="manifest.json">
   <title>ROZ Dashboard</title>
   <style>
     body {
@@ -283,7 +285,6 @@
         log(`You said: ${text}`);
         setTimeout(() => {
           log("Analyzing your request...");
-          // Insert dynamic response logic here
           log("ROZ will get smarter and respond soon!");
         }, 1000);
       };
@@ -291,6 +292,12 @@
       recognition.onerror = function (event) {
         log("Voice input error: " + event.error);
       };
+    }
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('service-worker.js')
+        .then(() => log("✅ Service Worker Registered for Offline Support"))
+        .catch(error => log("❌ Service Worker Error: " + error));
     }
 
     startCamera();
