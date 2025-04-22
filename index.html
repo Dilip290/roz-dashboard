@@ -11,18 +11,20 @@
       font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
       background: linear-gradient(to right, #eef2f3, #8e9eab);
       color: #333;
+      transition: background 0.5s ease-in-out;
     }
 
     header {
-      background-color: #20232a;
-      color: #61dafb;
+      background-color: #121212;
+      color: #00ffc8;
       padding: 1em;
       text-align: center;
-      font-size: 1.5em;
+      font-size: 2em;
+      box-shadow: 0 0 15px #00ffc8;
     }
 
     #cameraFeed {
-      display: block;
+      display: none;
       margin: 1em auto;
       max-width: 100%;
       height: auto;
@@ -30,9 +32,13 @@
       border-radius: 10px;
     }
 
-    .controls, .modes, .upload-section, .camera-toggle {
+    .controls, .modes, .upload-section, .camera-toggle, .features {
       text-align: center;
       margin: 1em;
+    }
+
+    .controls {
+      display: none;
     }
 
     button {
@@ -44,13 +50,13 @@
       cursor: pointer;
       background: #4CAF50;
       color: white;
-      box-shadow: 0 0 20px #4CAF50;
+      box-shadow: 0 0 15px #4CAF50;
       transition: transform 0.3s, box-shadow 0.3s;
     }
 
     button:hover {
       transform: scale(1.1);
-      box-shadow: 0 0 40px #45a049;
+      box-shadow: 0 0 30px #45a049;
     }
 
     #logs {
@@ -72,19 +78,56 @@
       height: auto;
       border-radius: 10px;
     }
+
+    .features {
+      display: none;
+      margin: 1.5em auto;
+      padding: 1em;
+      max-width: 800px;
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+
+    a.buy-link {
+      color: #4CAF50;
+      font-weight: bold;
+      text-decoration: none;
+    }
+
+    .market-links {
+      margin-top: 1em;
+    }
+
+    .market-links img {
+      width: 100px;
+      border-radius: 8px;
+      margin: 0.5em;
+    }
+
+    .voice-chat {
+      text-align: center;
+      margin-top: 2em;
+    }
+
+    .voice-chat button {
+      background-color: #ff5722;
+      box-shadow: 0 0 15px #ff5722;
+    }
   </style>
 </head>
 
 <body>
-  <header>🤖 ROZ Dashboard</header>
+  <header>🤖 ROZ AI Robot Dashboard</header>
 
   <div class="camera-toggle">
     <button onclick="toggleCamera()" id="cameraToggle">🔴 Turn Camera Off</button>
+    <button onclick="toggleControls()">🎮 Show Controls</button>
   </div>
 
   <video id="cameraFeed" autoplay playsinline></video>
 
-  <div class="controls">
+  <div class="controls" id="joystickControls">
     <button onclick="move('forward')">⬆️ Forward</button>
     <button onclick="move('left')">⬅️ Left</button>
     <button onclick="move('stop')">⏹️ Stop</button>
@@ -98,19 +141,50 @@
     <button onclick="switchMode('family')">👨‍👩‍👧‍👦 Family</button>
   </div>
 
-  <div class="upload-section">
-    <h3>📸 Upload Crop Image for Analysis</h3>
-    <input type="file" accept="image/*" onchange="analyzeCrop(event)">
+  <div class="features" id="farmFeatures">
+    <div class="upload-section">
+      <h3>📸 Upload Crop Image for Analysis</h3>
+      <input type="file" accept="image/*" onchange="analyzeCrop(event)">
+    </div>
+    <p>📞 Call for Pest Help: 1800-XXX-FARM</p>
+    <p>📰 Market Updates: Tomato - ₹25/kg | Wheat - ₹20/kg</p>
+    <p>🛒 <a href="https://www.amazon.in/s?k=pesticides" class="buy-link" target="_blank">Buy Pesticides on Amazon</a></p>
+    <div class="market-links">
+      <p><strong>🛍️ Popular Pest Products:</strong></p>
+      <a href="https://www.amazon.in/s?k=organic+neem+spray" target="_blank"><img src="https://m.media-amazon.com/images/I/61sz0gUkvCL._AC_UL320_.jpg"></a>
+      <a href="https://www.amazon.in/s?k=plant+fungicide+spray" target="_blank"><img src="https://m.media-amazon.com/images/I/71Ol8JtzVBL._AC_UL320_.jpg"></a>
+    </div>
+  </div>
+
+  <div class="features" id="homeFeatures">
+    <button onclick="log('🔊 Siren Activated')">🚨 Siren</button>
+    <button onclick="log('📷 Picture Captured')">📸 Capture Picture</button>
+    <p>📁 View saved media and alerts</p>
+  </div>
+
+  <div class="features" id="familyFeatures">
+    <p>🧒 Child Educational Assistant</p>
+    <p>👴 Elderly Care Alerts</p>
+    <p>📚 Homework Helper</p>
   </div>
 
   <div id="logs"></div>
-
   <div class="analysis-result" id="analysisResult"></div>
+
+  <div class="voice-chat">
+    <button onclick="startListening()">🎙️ Ask ROZ (Voice Input)</button>
+  </div>
 
   <script>
     const logArea = document.getElementById("logs");
     const video = document.getElementById("cameraFeed");
     const toggleBtn = document.getElementById("cameraToggle");
+    const joystick = document.getElementById("joystickControls");
+    const featureSections = {
+      farm: document.getElementById("farmFeatures"),
+      home: document.getElementById("homeFeatures"),
+      family: document.getElementById("familyFeatures")
+    };
     let cameraStream;
 
     function log(msg) {
@@ -132,6 +206,15 @@
       };
       document.body.style.background = themes[mode] || '#fff';
       log(`Now in ${mode} mode.`);
+
+      for (let key in featureSections) {
+        featureSections[key].style.display = 'none';
+      }
+      featureSections[mode].style.display = 'block';
+    }
+
+    function toggleControls() {
+      joystick.style.display = joystick.style.display === 'block' ? 'none' : 'block';
     }
 
     async function analyzeCrop(event) {
@@ -150,29 +233,6 @@
           <img src="https://i.imgur.com/RvD5ClF.png" alt="Neem Spray Tip for Kids">
         `;
         log("Crop analysis complete. Tomato crop needs neem spray.");
-
-        const analysisData = {
-          timestamp: new Date().toISOString(),
-          cropType: "Tomato",
-          issue: "Blight Disease",
-          recommendation: "Use natural neem spray. Maintain good soil drainage."
-        };
-
-        fetch('https://api.github.com/repos/dilipbojaoek8/roz-dashboard/contents/data/crop_analysis.json', {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': 'Bearer YOUR_GITHUB_TOKEN'
-          },
-          body: JSON.stringify({
-            message: `Add crop analysis log for ${analysisData.timestamp}`,
-            content: btoa(JSON.stringify(analysisData, null, 2)),
-            sha: null
-          })
-        })
-        .then(response => response.json())
-        .then(data => log("📝 Analysis data logged to GitHub."))
-        .catch(error => log("⚠️ Failed to log data to GitHub."));
       };
       reader.readAsDataURL(file);
     }
@@ -182,6 +242,7 @@
         .then(stream => {
           cameraStream = stream;
           video.srcObject = stream;
+          video.style.display = 'block';
           toggleBtn.textContent = "🔴 Turn Camera Off";
         })
         .catch(err => log("Camera access denied."));
@@ -191,6 +252,7 @@
       if (cameraStream) {
         cameraStream.getTracks().forEach(track => track.stop());
         video.srcObject = null;
+        video.style.display = 'none';
         toggleBtn.textContent = "🟢 Turn Camera On";
       }
     }
@@ -203,7 +265,34 @@
       }
     }
 
-    // Start camera by default
+    function startListening() {
+      if (!('webkitSpeechRecognition' in window)) {
+        log("Speech recognition not supported in this browser.");
+        return;
+      }
+
+      const recognition = new webkitSpeechRecognition();
+      recognition.continuous = false;
+      recognition.interimResults = false;
+      recognition.lang = 'en-IN';
+
+      recognition.start();
+
+      recognition.onresult = function (event) {
+        const text = event.results[0][0].transcript;
+        log(`You said: ${text}`);
+        setTimeout(() => {
+          log("Analyzing your request...");
+          // Insert dynamic response logic here
+          log("ROZ will get smarter and respond soon!");
+        }, 1000);
+      };
+
+      recognition.onerror = function (event) {
+        log("Voice input error: " + event.error);
+      };
+    }
+
     startCamera();
   </script>
 </body>
