@@ -1,412 +1,201 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>ROZ Voice Bot</title>
-<meta name="viewport" content="width=device-width,initial-scale=1">
 <style>
-  :root{
-    --bg:#0f172a; --ink:#e5e7eb; --muted:#94a3b8;
-    --brand:#22d3ee; --brand2:#a78bfa; --panel:#0b1220; --ring:rgba(34,211,238,.45);
-  }
-  *{box-sizing:border-box} html,body{height:100%}
-  body{
-    margin:0; color:var(--ink); font-family:Inter,system-ui,Segoe UI,Roboto,Arial,sans-serif;
-    background:
-      radial-gradient(1200px 600px at 10% -10%, rgba(34,211,238,.12), transparent 60%),
-      radial-gradient(900px 500px at 100% 0%, rgba(167,139,250,.12), transparent 60%),
-      #0f172a;
-  }
-  header{
-    position:sticky; top:0; z-index:10; padding:12px 16px;
-    backdrop-filter: blur(6px);
-    background:linear-gradient(180deg, rgba(15,23,42,.8), rgba(15,23,42,.4));
-    border-bottom:1px solid rgba(148,163,184,.12);
-  }
-  .brand{display:flex;align-items:center;gap:10px}
-  .brand .dot{width:10px;height:10px;border-radius:50%;
-    background:conic-gradient(from 0deg, var(--brand), var(--brand2), var(--brand)); box-shadow:0 0 16px var(--ring);
-  }
+  body{margin:0;background:#0f172a;color:#e5e7eb;font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif}
   main{max-width:900px;margin:0 auto;padding:16px}
-  .panel{background:rgba(2,6,23,.6);border:1px solid rgba(148,163,184,.18);border-radius:18px;padding:16px}
-  .rows{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
-  label{font-size:13px;color:var(--muted)}
-  select,input,button{background:#0b1020;color:var(--ink);border:1px solid rgba(148,163,184,.2);border-radius:12px;padding:10px 12px;font-size:14px}
+  .panel{background:#0b1220cc;border:1px solid #22304a;border-radius:18px;padding:16px}
+  .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  input,select,button{background:#0b1020;color:#e5e7eb;border:1px solid #2b3b59;border-radius:12px;padding:10px 12px}
   input.grow{flex:1}
-  button{cursor:pointer;transition:.15s transform ease} button:hover{transform:translateY(-1px)}
-  .btn-primary{background:linear-gradient(90deg, rgba(34,211,238,.2), rgba(167,139,250,.2));border-color:rgba(34,211,238,.4)}
-  .hint{font-size:12px;color:var(--muted);margin-top:6px}
-  #chat{margin-top:14px;max-height:55vh;overflow:auto;padding:8px 6px;display:flex;flex-direction:column;gap:10px}
-  .msg{display:flex;gap:10px;align-items:flex-start}
-  .bub{background:#0b1220;border:1px solid rgba(148,163,184,.12);padding:10px 12px;border-radius:14px;max-width:80%;line-height:1.45;box-shadow:0 6px 20px rgba(0,0,0,.18)}
-  .me .bub{background:#132036}
-  .tag{font-size:12px;color:var(--muted)}
+  #chat{margin-top:12px;max-height:58vh;overflow:auto;display:flex;flex-direction:column;gap:10px}
+  .msg{display:flex}.me .bub{background:#132036}.bot .bub{background:#0b1220}
+  .bub{padding:10px 12px;border-radius:14px;border:1px solid #24314f;max-width:80%}
   #player iframe{width:100%;height:250px;border:0;border-radius:12px;margin-top:10px}
-  /* CENTER mic button */
-  #micFloat{
-    position:fixed; left:50%; transform:translateX(-50%);
-    bottom:18px; z-index:20; width:74px;height:74px;border-radius:999px;
-    display:flex;align-items:center;justify-content:center;font-size:28px;
-    background:radial-gradient(circle at 30% 20%, rgba(34,211,238,.35), rgba(167,139,250,.35));
-    border:1px solid rgba(148,163,184,.25); box-shadow:0 10px 40px rgba(0,0,0,.35);
-  }
-  #micFloat.listening{ outline:4px solid var(--ring) }
-  #ttsWarn{display:none;margin-top:6px;font-size:12px;color:#fca5a5}
+  #mic{position:fixed;left:50%;transform:translateX(-50%);bottom:18px;width:74px;height:74px;border-radius:999px;background:radial-gradient(circle at 30% 20%, rgba(34,211,238,.35), rgba(167,139,250,.35));border:1px solid #2b3b59;font-size:28px}
+  #mic.listening{outline:4px solid rgba(34,211,238,.45)}
+  #warn{display:none;color:#fca5a5;font-size:12px;margin-top:6px}
 </style>
 </head>
 <body>
-  <header>
-    <div class="brand"><span class="dot"></span><strong>ROZ Voice Bot</strong><span class="tag">browser-only • English / తెలుగు</span></div>
-  </header>
-
-  <main>
-    <div class="panel">
-      <div class="rows">
-        <div>
-          <label>STT Language (Mic):</label><br/>
-          <select id="sttLang">
-            <option value="en-IN">English (India)</option>
-            <option value="te-IN">తెలుగు (India)</option>
-          </select>
-        </div>
-        <div>
-          <label>TTS Voice (Speaker):</label><br/>
-          <select id="ttsVoice">
-            <option value="">Auto (best match)</option>
-          </select>
-        </div>
-        <div style="flex:1"></div>
-        <div>
-          <label class="sr-only">Stop Speaking</label><br/>
-          <button id="stop">Stop Speaking</button>
-        </div>
-      </div>
-
-      <div id="ttsWarn">No Telugu TTS voice found on this device. On Android: install/update “Speech Services by Google” → download Telugu voice, then refresh this page.</div>
-
-      <div class="rows" style="margin-top:10px">
-        <input id="text" class="grow" placeholder="Try: how are you • weather in Hyderabad • play Telugu songs • time now • stop music • who is APJ Abdul Kalam" />
-        <button id="send" class="btn-primary">Ask</button>
-      </div>
-
-      <div class="hint">Tip: Hold the mic, speak, and release. For Telugu speech, pick a Telugu voice in the TTS dropdown (Android → Speech Services by Google).</div>
-
-      <div id="chat" aria-live="polite"></div>
-
-      <!-- Fixed container for the YouTube API player -->
-      <div id="player"><div id="yt-embed"></div></div>
+<main>
+  <div class="panel">
+    <div class="row">
+      <label>STT:</label>
+      <select id="stt">
+        <option value="en-IN">English (India)</option>
+        <option value="te-IN">తెలుగు (India)</option>
+      </select>
+      <label>TTS:</label>
+      <select id="tts"><option value="">Auto</option></select>
+      <button id="stop">Stop Speaking</button>
     </div>
-  </main>
 
-  <!-- Centered mic -->
-  <button id="micFloat" title="Hold to talk">🎤</button>
+    <div id="warn">No Telugu TTS voice found. On Android install/update “Speech Services by Google” and download Telugu voice.</div>
 
-  <!-- YouTube IFrame API -->
-  <script src="https://www.youtube.com/iframe_api"></script>
+    <div class="row" style="margin-top:8px">
+      <input id="q" class="grow" placeholder="Say/Type: play Telugu songs • weather in Hyderabad • who is the prime minister of India" />
+      <button id="ask">Ask</button>
+    </div>
 
+    <div id="chat"></div>
+    <div id="player"><div id="yt-embed"></div></div>
+  </div>
+</main>
+
+<button id="mic" title="Hold to talk">🎤</button>
+<script src="https://www.youtube.com/iframe_api"></script>
 <script>
-/* ===== elements ===== */
+/* ====== CONFIG ====== */
+const API_BASE = "https://YOUR-WORKER-SUBDOMAIN.workers.dev"; // <- change this
+
+/* ====== UI refs ====== */
 const chat = document.getElementById('chat');
-const sttLangSel = document.getElementById('sttLang');
-const ttsVoiceSel = document.getElementById('ttsVoice');
-const textIn = document.getElementById('text');
-const btnSend = document.getElementById('send');
+const qIn  = document.getElementById('q');
+const btnAsk = document.getElementById('ask');
 const btnStop = document.getElementById('stop');
-const micFloat = document.getElementById('micFloat');
-const ttsWarn = document.getElementById('ttsWarn');
+const mic = document.getElementById('mic');
+const sttSel = document.getElementById('stt');
+const ttsSel = document.getElementById('tts');
+const warn = document.getElementById('warn');
 
-/* ===== persistence ===== */
-(function restore(){
-  const L = localStorage.getItem("roz.stt"); if(L) sttLangSel.value = L;
-  const V = localStorage.getItem("roz.voice"); if(V) ttsVoiceSel.value = V;
-})();
-sttLangSel.addEventListener('change', ()=>localStorage.setItem("roz.stt", sttLangSel.value));
-ttsVoiceSel.addEventListener('change', ()=>localStorage.setItem("roz.voice", ttsVoiceSel.value));
+/* ====== chat helpers ====== */
+function say(kind, text){ const row=document.createElement('div');row.className=`msg ${kind}`;const b=document.createElement('div');b.className='bub';b.textContent=text;row.appendChild(b);chat.appendChild(row);chat.scrollTop=chat.scrollHeight; }
 
-/* ===== chat helpers ===== */
-function addMsg(kind, text){
-  const row = document.createElement('div'); row.className = `msg ${kind}`;
-  const bub = document.createElement('div'); bub.className = 'bub';
-  bub.textContent = text; row.appendChild(bub);
-  chat.appendChild(row); chat.scrollTop = chat.scrollHeight;
-}
-
-/* ===== TTS voices ===== */
-let allVoices = [];
-function hasTeluguVoice(){ return allVoices.some(v=>/te[-_]/i.test(v.lang) || /Telugu/i.test(v.name)); }
+/* ====== speech ====== */
+let voices=[];
 function loadVoices(){
-  allVoices = speechSynthesis.getVoices() || [];
-  const keep = ttsVoiceSel.value;
-  ttsVoiceSel.innerHTML = `<option value="">Auto (best match)</option>`;
-  const telugu = allVoices.filter(v=>/te[-_]/i.test(v.lang) || /Telugu/i.test(v.name));
-  const english = allVoices.filter(v=>/en[-_]/i.test(v.lang));
-  const others  = allVoices.filter(v=>!telugu.includes(v) && !english.includes(v));
-  function addGroup(label, list){
-    if(!list.length) return;
-    const group = document.createElement('optgroup'); group.label = label;
-    list.forEach(v=>{
-      const opt = document.createElement('option');
-      opt.value = v.name + '||' + v.lang; opt.textContent = `${v.name} — ${v.lang}`;
-      group.appendChild(opt);
-    });
-    ttsVoiceSel.appendChild(group);
-  }
-  addGroup("Telugu", telugu); addGroup("English", english); addGroup("Other", others);
-  if(keep) ttsVoiceSel.value = keep;
-  ttsWarn.style.display = hasTeluguVoice() ? "none" : "block";
+  voices = speechSynthesis.getVoices()||[];
+  const keep = ttsSel.value;
+  ttsSel.innerHTML = `<option value="">Auto</option>`;
+  voices.forEach(v=>{ const o=document.createElement('option'); o.value=v.name+'||'+v.lang; o.textContent=`${v.name} — ${v.lang}`; ttsSel.appendChild(o); });
+  warn.style.display = voices.some(v=>/te[-_]/i.test(v.lang)||/Telugu/i.test(v.name)) ? "none" : "block";
+  if(keep) ttsSel.value = keep;
 }
-if('speechSynthesis' in window){
-  loadVoices(); speechSynthesis.onvoiceschanged = loadVoices;
-}
+if('speechSynthesis' in window){ loadVoices(); speechSynthesis.onvoiceschanged=loadVoices; }
 function pickVoice(){
-  const sel = ttsVoiceSel.value;
+  const sel = ttsSel.value;
   if(!sel){
-    const isTel = sttLangSel.value.startsWith('te');
-    const tel = allVoices.find(v=>/te[-_]/i.test(v.lang) || /Telugu/i.test(v.name));
-    if(isTel && tel) return tel;
-    return allVoices.find(v=>/en[-_]/i.test(v.lang)) || allVoices[0] || null;
+    const tel = voices.find(v=>/te[-_]/i.test(v.lang)||/Telugu/i.test(v.name));
+    if(sttSel.value.startsWith('te') && tel) return tel;
+    return voices.find(v=>/en[-_]/i.test(v.lang))||voices[0]||null;
   }
-  const [name, lang] = sel.split('||');
-  return allVoices.find(v=>v.name===name && v.lang===lang) || null;
+  const [n,l]=sel.split('||'); return voices.find(v=>v.name===n&&v.lang===l)||null;
 }
 function speak(text){
   if(!('speechSynthesis' in window)) return;
-  const u = new SpeechSynthesisUtterance(text);
-  const v = pickVoice();
-  if(v) u.voice = v, u.lang = v.lang; else u.lang = sttLangSel.value;
+  const u=new SpeechSynthesisUtterance(text); const v=pickVoice(); if(v) u.voice=v,u.lang=v.lang; else u.lang=sttSel.value;
   speechSynthesis.cancel(); speechSynthesis.speak(u);
 }
 btnStop.onclick = ()=>speechSynthesis.cancel();
 
-/* ===== intents & helpers ===== */
-function norm(q){ return q.toLowerCase().replace(/\s+/g,' ').trim(); }
-function smallTalk(q){
-  const n = norm(q);
-  if(n.includes("how are you") || n.includes("how r u") || n.includes("ela unnaru") || n.includes("meeru ela"))
-    return "I’m good! How can I help you?";
-  if(n==="hi"||n==="hello"||n.includes("namaste")||n.includes("namask"))
-    return "Hello! Ask me for weather or say: play Telugu songs.";
-  if(n.includes("your name") || q.includes("మీ పేరు") || n.includes("mee peru"))
-    return "I’m your ROZ voice bot.";
-  return null;
-}
-function parseCity(q){
-  const mIn = /(?:weather|climate)?\s*in\s+([a-zA-Z\s]+)$/i.exec(q);
-  if(mIn && mIn[1]) return mIn[1].trim();
-  const mLo = /లో\s*([^\?\.]+)$/i.exec(q);
-  if(mLo && mLo[1]) return mLo[1].trim();
-  const prev = localStorage.getItem("roz.city"); return prev || null;
-}
-function wantsWeather(q){ const n=norm(q); return n.includes("weather") || q.includes("వాతావరణ"); }
-function wantsPlay(q){ const n=norm(q); return (n.includes("play") && n.includes("song")) || n.includes("telugu song") || q.includes("పాట"); }
-function wantsTime(q){ const n=norm(q); return n.includes("time now") || n.includes("current time") || q.includes("సమయం"); }
-function wantsDate(q){ const n=norm(q); return n.includes("today") || n.includes("date today") || q.includes("తేదీ"); }
-function wantsStopMusic(q){ const n=norm(q); return n.includes("stop music") || n.includes("pause music") || n.includes("close player"); }
-function wantsClear(q){ const n=norm(q); return n==="clear" || n.includes("clear screen") || n.includes("clear chat") || n.includes("erase"); }
-function wantsHelp(q){ const n=norm(q); return n==="help" || n.includes("what can you do") || q.includes("సహాయం"); }
-
-async function weather(city){
-  try{
-    if(!city) city = "Hyderabad";
-    const g = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1&language=en&format=json`);
-    const gj = await g.json();
-    if(!gj.results || !gj.results.length) return `Sorry, I couldn’t find ${city}.`;
-    const { latitude, longitude, name, country } = gj.results[0];
-    localStorage.setItem("roz.city", name);
-    const w = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,apparent_temperature,weather_code`);
-    const wj = await w.json();
-    if(!wj.current) return "Weather service returned no data.";
-    const t  = Math.round(wj.current.temperature_2m);
-    const tf = Math.round(wj.current.apparent_temperature);
-    const code = wj.current.weather_code;
-    const map = {0:"clear sky",1:"mainly clear",2:"partly cloudy",3:"overcast",45:"foggy",48:"rime fog",
-      51:"light drizzle",53:"drizzle",55:"dense drizzle",61:"light rain",63:"rain",65:"heavy rain",
-      71:"light snow",73:"snow",75:"heavy snow",80:"rain showers",81:"heavy showers",82:"violent showers",
-      95:"thunderstorm",96:"thunder w/ hail",99:"severe thunderstorm"};
-    const desc = map[code] || "moderate";
-    const te = `${name} లో వాతావరణం: ${desc}. ఉష్ణోగ్రత ${t}°C, అనిపించే ఉష్ణోగ్రత ${tf}°C.`;
-    const en = `Weather in ${name}, ${country}: ${desc}. Temperature ${t}°C, feels like ${tf}°C.`;
-    const v = pickVoice();
-    return (v && /te[-_]/i.test(v.lang)) ? te : en;
-  }catch(e){ return "Weather service not reachable right now."; }
+/* ====== API helpers ====== */
+async function api(path, params){
+  const u = new URL(API_BASE + path);
+  Object.entries(params||{}).forEach(([k,v])=>u.searchParams.set(k,v));
+  const r = await fetch(u, { headers:{accept:'application/json'} });
+  if(!r.ok) throw new Error("API "+path+" failed");
+  return r.json();
 }
 
-/* ===== YouTube player (autoplay in-page, with retries) ===== */
-let ytReady = false, ytPlayer = null, lastGestureTs = 0;
-let currentQuery = "", variantIndex = 0;
-function onYouTubeIframeAPIReady(){ ytReady = true; }
-
+/* ====== YouTube embed by videoId ====== */
+let ytReady=false, player=null, lastGesture=0;
+function onYouTubeIframeAPIReady(){ ytReady=true; }
 function ensurePlayer(){
-  if(ytPlayer || !ytReady) return;
-  ytPlayer = new YT.Player('yt-embed', {
-    height: '250', width: '100%',
-    playerVars: { autoplay: 1, mute: 1, playsinline: 1, origin: location.origin },
-    events: {
-      'onReady': ()=>{},
-      'onError': (e)=> {
-        // 2=invalid, 5=HTML5 error, 101/150=embedding disabled
-        if([2,5,101,150].includes(e.data)){
-          tryNextVariant();
-        }
-      }
-    }
+  if(player || !ytReady) return;
+  player = new YT.Player('yt-embed', {
+    height:'250', width:'100%',
+    playerVars:{autoplay:1,mute:1,playsinline:1,origin:location.origin},
+    events:{ onReady:()=>{} }
   });
 }
-function queryVariants(q){
-  return [
-    q,
-    `${q} lyrics`,
-    `${q} audio`,
-    `${q} jukebox`,
-    `${q} video song`,
-    `${q} (topic)`
-  ];
+function playVideoId(id){
+  ensurePlayer(); if(!player||!player.loadVideoById) return;
+  player.loadVideoById(id); setTimeout(()=>{ try{ if(Date.now()-lastGesture<5000) player.unMute(); }catch(e){} }, 500);
 }
-function loadVariant(q, idx){
-  const list = queryVariants(q);
-  const use = list[Math.min(idx, list.length-1)];
-  ytPlayer.loadPlaylist({ listType: "search", list: use, index: 0, startSeconds: 0, suggestedQuality: "default" });
-  setTimeout(()=>{
-    try{
-      ytPlayer.playVideo();
-      if(Date.now() - lastGestureTs < 5000){ ytPlayer.unMute(); }
-    }catch(e){}
-  }, 500);
-}
-function tryNextVariant(){
-  variantIndex += 1;
-  if(variantIndex >= queryVariants(currentQuery).length){
-    addMsg('bot', "That video wouldn’t embed. Trying a different song…");
-    variantIndex = 1;
-  }
-  loadVariant(currentQuery, variantIndex);
-}
-function playSearch(q){
-  currentQuery = q || "Telugu songs";
-  variantIndex = 0;
-  ensurePlayer();
-  if(!ytPlayer || !ytPlayer.loadPlaylist){ return; }
-  loadVariant(currentQuery, variantIndex);
-}
-function stopPlayer(){
-  if(ytPlayer && ytPlayer.destroy){ ytPlayer.destroy(); }
-  ytPlayer = null;
-  document.getElementById('yt-embed').innerHTML = "";
-}
+function stopPlayer(){ if(player&&player.destroy) player.destroy(); player=null; document.getElementById('yt-embed').innerHTML=""; }
 
-/* ===== Wikipedia live fallback ===== */
-function localeIsIndia(){
-  try { return (navigator.language || 'en-IN').toLowerCase().endsWith('-in'); }
-  catch(e){ return true; }
-}
-function normalizeQuestionForWiki(q){
-  let s = q.toLowerCase().trim();
-  if((s === "who is the prime minister" || s === "prime minister") && localeIsIndia()){
-    return "Prime Minister of India";
-  }
-  if((s === "who is the president" || s === "president") && localeIsIndia()){
-    return "President of India";
-  }
-  s = s.replace(/^(who|what)\s+is\s+/i, "").replace(/^tell me about\s+/i,"");
-  return s.length ? s : q;
-}
-async function wikiSummaryByTitle(title){
-  try{
-    const r = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}`, { headers:{accept:'application/json'} });
-    if(!r.ok) return null;
-    const j = await r.json();
-    return j.extract ? j.extract.split('. ').slice(0,2).join('. ') + '.' : null;
-  }catch(e){ return null; }
-}
-async function wikiAnswer(q){
-  const normalized = normalizeQuestionForWiki(q).replace(/\?+$/,'').trim();
-  // 1) direct summary
-  let ans = await wikiSummaryByTitle(normalized);
-  if(ans) return ans;
-  // 2) search → best title → summary
-  try{
-    const s = await fetch(`https://en.wikipedia.org/w/rest.php/v1/search/title?q=${encodeURIComponent(normalized)}&limit=1`);
-    const sj = await s.json();
-    if(sj && sj.pages && sj.pages.length){
-      const best = sj.pages[0].title;
-      ans = await wikiSummaryByTitle(best);
-      if(ans) return ans;
-    }
-  }catch(e){}
+/* ====== skills ====== */
+function wantsWeather(x){return /weather|వాతావరణ/i.test(x)}
+function wantsPlay(x){return /play .*song|play telugu|telugu song|పాట/i.test(x)}
+function wantsStop(x){return /stop music|pause music|close player/i.test(x)}
+function wantsTime(x){return /time now|current time|సమయం/i.test(x)}
+function wantsDate(x){return /today|date today|తేదీ/i.test(x)}
+function wantsHelp(x){return /^help$|what can you do|సహాయం/i.test(x)}
+function smallTalk(x){
+  const n=x.toLowerCase();
+  if(/how are you|how r u|ela unnaru|meeru ela/.test(n)) return "I’m good! How can I help you?";
+  if(/^hi$|^hello$|namaste|namask/.test(n)) return "Hello! Ask for weather or say: play Telugu songs.";
+  if(/your name|మీ పేరు|mee peru/.test(n)) return "I’m your ROZ voice bot.";
   return null;
 }
 
-/* ===== main handler ===== */
-function tellTime(){ const d=new Date(); return d.toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'}); }
-function tellDate(){ const d=new Date(); return d.toLocaleDateString(undefined,{weekday:'long',year:'numeric',month:'long',day:'numeric'}); }
-function helpText(){
-  const v = pickVoice(), teAvail = v && /te[-_]/i.test(v.lang);
-  return teAvail
-    ? "నేను ఇవి చేయగలను: 1) హౌ ఆర్ యూ. 2) హైదరాబాదు లో వాతావరణం. 3) ప్లే తెలుగు పాటలు. 4) టైమ్ నౌ. 5) స్టాప్ మ్యూజిక్. 6) క్లియర్. 7) వికీపీడియా ద్వారా సాధారణ ప్రశ్నలకు సమాధానం."
-    : "I can do: small talk, weather, play Telugu songs, time/date, stop music, clear, plus general facts from Wikipedia.";
-}
-
+/* ====== handlers ====== */
 async function handle(q){
-  if(!q) return;
-  addMsg('me', q);
+  if(!q) return; say('me', q);
 
-  if(wantsHelp(q)){ const t = helpText(); addMsg('bot', t); speak(t); stopPlayer(); return; }
+  const st = smallTalk(q); if(st){ say('bot', st); speak(st); stopPlayer(); return; }
+  if(wantsHelp(q)){ const t="I can do: weather, play Telugu songs, time/date, stop/clear, and answer general questions."; say('bot', t); speak(t); stopPlayer(); return; }
+  if(wantsStop(q)){ stopPlayer(); const t="Stopped the music."; say('bot', t); speak(t); return; }
+  if(wantsTime(q)){ const t="⏰ "+new Date().toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'}); say('bot', t); speak(t); return; }
+  if(wantsDate(q)){ const t="📅 "+new Date().toLocaleDateString(undefined,{weekday:'long',year:'numeric',month:'long',day:'numeric'}); say('bot', t); speak(t); return; }
 
-  const st = smallTalk(q);
-  if(st){ addMsg('bot', st); speak(st); stopPlayer(); return; }
+  try{
+    if(wantsWeather(q)){
+      const city = (q.match(/in\s+([a-zA-Z\s]+)$/i)||[])[1] || "Hyderabad";
+      const d = await api("/v1/weather", { city });
+      if(d.error){ say('bot',"Sorry, I couldn’t find that city."); return; }
+      const descMap={0:"clear sky",1:"mainly clear",2:"partly cloudy",3:"overcast",45:"foggy",48:"rime fog",51:"light drizzle",53:"drizzle",55:"dense drizzle",61:"light rain",63:"rain",65:"heavy rain",71:"light snow",73:"snow",75:"heavy snow",80:"rain showers",81:"heavy showers",82:"violent showers",95:"thunderstorm",96:"thunder w/ hail",99:"severe thunderstorm"};
+      const msg=`Weather in ${d.name}, ${d.country}: ${descMap[d.code]||"moderate"}. Temp ${d.t}°C, feels ${d.tf}°C.`;
+      say('bot', msg); speak(msg); stopPlayer(); return;
+    }
 
-  if(wantsTime(q)){ const t = `⏰ ${tellTime()}`; addMsg('bot', t); speak(t); return; }
-  if(wantsDate(q)){ const t = `📅 ${tellDate()}`; addMsg('bot', t); speak(t); return; }
+    if(wantsPlay(q)){
+      const name = q.toLowerCase().includes("play") ? q.replace(/.*play/i,"").replace(/song/i,"").trim() : "Telugu songs";
+      const res = await api("/v1/music", { q: name || "Telugu songs" });
+      if(res.videoId){
+        say('bot', `Playing ${name||"Telugu songs"} here.`);
+        playVideoId(res.videoId);
+        return;
+      } else {
+        say('bot', "Couldn't find an embeddable result.");
+        return;
+      }
+    }
 
-  if(wantsWeather(q)){ const say = await weather(parseCity(q)); addMsg('bot', say); speak(say); stopPlayer(); return; }
-
-  if(wantsStopMusic(q)){ stopPlayer(); const t = "Stopped the music."; addMsg('bot', t); speak(t); return; }
-  if(wantsClear(q)){ chat.innerHTML = ""; stopPlayer(); return; }
-
-  if(wantsPlay(q)){
-    let n = q; const i = n.toLowerCase().indexOf("play"); if(i>=0) n = n.substring(i+4).trim();
-    if(!n) n = "Telugu songs";
-    const say = `Playing ${n} here.`; addMsg('bot', say); speak(say);
-    playSearch(n);
+    // general answer
+    const a = await api("/v1/answer", { q });
+    if(a && a.answer){
+      say('bot', a.answer); speak(a.answer); stopPlayer(); return;
+    }
+  }catch(e){
+    say('bot', "Online service blocked or unavailable.");
     return;
   }
 
-  // Wikipedia fallback
-  const ans = await wikiAnswer(q);
-  if(ans){ addMsg('bot', ans); speak(ans); stopPlayer(); return; }
-
-  const fb = "Say 'help', ask for weather, or say: play Telugu songs.";
-  addMsg('bot', fb); speak(fb); stopPlayer();
+  say('bot', "Say 'help', ask for weather, or say: play Telugu songs.");
+  stopPlayer();
 }
 
-/* ===== UI ===== */
-btnSend.onclick = ()=>{ lastGestureTs = Date.now(); handle(textIn.value.trim()); };
-textIn.addEventListener('keydown', e=>{ if(e.key==='Enter'){ lastGestureTs = Date.now(); btnSend.click(); }});
+/* ====== UI wiring ====== */
+btnAsk.onclick = ()=>{ lastGesture = Date.now(); handle(qIn.value.trim()); };
+qIn.addEventListener('keydown', e=>{ if(e.key==='Enter'){ lastGesture=Date.now(); btnAsk.click(); }});
 
-/* speech recognition (press & hold mic) */
-let rec=null, listening=false;
+/* mic press & hold */
+let rec=null,listening=false;
 if('webkitSpeechRecognition' in window){
   rec = new webkitSpeechRecognition(); rec.continuous=false; rec.interimResults=false;
-  rec.onresult = e => { const t = e.results[0][0].transcript; handle(t); };
-  rec.onend = ()=>{ listening=false; micFloat.classList.remove('listening'); };
-} else {
-  addMsg('bot', "⚠️ Your browser doesn’t support mic recognition. Type your query.");
+  rec.onresult = e=>{ const t=e.results[0][0].transcript; handle(t); };
+  rec.onend = ()=>{ listening=false; mic.classList.remove('listening'); };
+}else{
+  say('bot', "⚠️ Mic recognition not supported here. Type your query.");
 }
-function startRec(){
-  lastGestureTs = Date.now(); // used to allow unmute after user gesture
-  if(!rec) return;
-  try{
-    rec.lang = sttLangSel.value;
-    listening = true; micFloat.classList.add('listening');
-    rec.start(); addMsg('bot', "🎤 Listening…");
-  }catch(e){}
-}
+function startRec(){ lastGesture=Date.now(); if(!rec) return; try{ rec.lang=sttSel.value; listening=true; mic.classList.add('listening'); rec.start(); say('bot',"🎤 Listening…"); }catch(e){} }
 function stopRec(){ if(rec && listening) rec.stop(); }
-micFloat.onmousedown = startRec;  micFloat.ontouchstart = startRec;
-micFloat.onmouseup   = stopRec;   micFloat.ontouchend   = stopRec; micFloat.onmouseleave = stopRec;
-
-/* voices warm-up */
-if('speechSynthesis' in window){ speechSynthesis.getVoices(); setTimeout(loadVoices, 200); }
+mic.onmousedown=startRec; mic.ontouchstart=startRec; mic.onmouseup=stopRec; mic.ontouchend=stopRec; mic.onmouseleave=stopRec;
 </script>
 </body>
 </html>
