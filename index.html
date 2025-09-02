@@ -51,6 +51,7 @@
     border:1px solid rgba(148,163,184,.25); box-shadow:0 10px 40px rgba(0,0,0,.35);
   }
   #micFloat.listening{ outline:4px solid var(--ring) }
+  #ttsWarn{display:none;margin-top:6px;font-size:12px;color:#fca5a5}
 </style>
 </head>
 <body>
@@ -81,15 +82,19 @@
         </div>
       </div>
 
+      <div id="ttsWarn">No Telugu TTS voice found on this device. On Android: install/update “Speech Services by Google” → download Telugu voice, then refresh this page.</div>
+
       <div class="rows" style="margin-top:10px">
-        <input id="text" class="grow" placeholder="Try: how are you • weather in Hyderabad • play Telugu songs • time now • stop music • what is AI" />
+        <input id="text" class="grow" placeholder="Try: how are you • weather in Hyderabad • play Telugu songs • time now • stop music • who is APJ Abdul Kalam" />
         <button id="send" class="btn-primary">Ask</button>
       </div>
 
-      <div class="hint">Tip: On mobile Chrome, hold the mic, speak, and release. For **Telugu speaking**, pick a Telugu voice in the TTS dropdown (Android → Speech Services by Google → download Telugu).</div>
+      <div class="hint">Tip: Hold the mic, speak, and release. For Telugu speech, pick a Telugu voice in the TTS dropdown (Android → Speech Services by Google).</div>
 
       <div id="chat" aria-live="polite"></div>
-      <div id="player"></div>
+
+      <!-- Fixed container for the YouTube API player -->
+      <div id="player"><div id="yt-embed"></div></div>
     </div>
   </main>
 
@@ -109,6 +114,7 @@ const textIn = document.getElementById('text');
 const btnSend = document.getElementById('send');
 const btnStop = document.getElementById('stop');
 const micFloat = document.getElementById('micFloat');
+const ttsWarn = document.getElementById('ttsWarn');
 
 /* ===== persistence ===== */
 (function restore(){
@@ -128,6 +134,7 @@ function addMsg(kind, text){
 
 /* ===== TTS voices ===== */
 let allVoices = [];
+function hasTeluguVoice(){ return allVoices.some(v=>/te[-_]/i.test(v.lang) || /Telugu/i.test(v.name)); }
 function loadVoices(){
   allVoices = speechSynthesis.getVoices() || [];
   const keep = ttsVoiceSel.value;
@@ -147,6 +154,7 @@ function loadVoices(){
   }
   addGroup("Telugu", telugu); addGroup("English", english); addGroup("Other", others);
   if(keep) ttsVoiceSel.value = keep;
+  ttsWarn.style.display = hasTeluguVoice() ? "none" : "block";
 }
 if('speechSynthesis' in window){
   loadVoices(); speechSynthesis.onvoiceschanged = loadVoices;
@@ -224,61 +232,58 @@ async function weather(city){
   }catch(e){ return "Weather service not reachable right now."; }
 }
 
-/* ===== YouTube player (auto-play inside the page) ===== */
-let ytPlayer = null, pendingQuery = null, lastGestureTs = 0;
+/* ===== YouTube player (autoplay in-page) ===== */
+let ytReady = false, ytPlayer = null, lastGestureTs = 0;
+function onYouTubeIframeAPIReady(){ ytReady = true; }
 
-function onYouTubeIframeAPIReady() {
+function ensurePlayer(){
+  if(ytPlayer || !ytReady) return;
   ytPlayer = new YT.Player('yt-embed', {
-    events: {
-      'onReady': () => { if(pendingQuery){ playSearch(pendingQuery); pendingQuery = null; } },
-    }
+    height: '250', width: '100%',
+    playerVars: { autoplay: 1, mute: 1 },
+    events: { 'onReady': ()=>{} }
   });
 }
-// Build/embed the iframe (only once)
-function ensurePlayerIframe(){
-  if(document.getElementById('yt-embed')) return;
-  const ifr = document.createElement('iframe');
-  ifr.id = 'yt-embed';
-  // IMPORTANT: use youtube.com (not -nocookie) so enablejsapi works.
-  ifr.src = 'https://www.youtube.com/embed?enablejsapi=1';
-  ifr.setAttribute('allow', 'autoplay; encrypted-media');
-  ifr.setAttribute('allowfullscreen', '');
-  ifr.style.width = '100%'; ifr.style.height = '250px'; ifr.style.border = '0'; ifr.style.borderRadius = '12px';
-  playerDiv.innerHTML = ''; playerDiv.appendChild(ifr);
-}
-
-// Ask the player to search & autoplay the first result
 function playSearch(q){
-  ensurePlayerIframe();
-  // If API Player is not ready yet, store query
-  if(!ytPlayer || typeof ytPlayer.loadPlaylist !== 'function'){
-    pendingQuery = q; return;
-  }
-  // Trick: use a "search playlist" via listType=search
-  const url = `https://www.youtube.com/embed?enablejsapi=1&autoplay=1&mute=1&listType=search&list=${encodeURIComponent(q)}`;
-  ytPlayer.cueVideoByUrl({mediaContentUrl: url}); // cue first
-  // Small delay then play & unmute (user gesture already happened via mic hold or click)
+  ensurePlayer();
+  if(!ytPlayer || !ytPlayer.loadPlaylist){ return; }
+  ytPlayer.loadPlaylist({ listType:"search", list:q, index:0, startSeconds:0, suggestedQuality:"default" });
+  // unmute only if there was a recent user gesture
   setTimeout(()=>{
     try{
       ytPlayer.playVideo();
-      // Unmute only if we have a recent user gesture (<5s)
       if(Date.now() - lastGestureTs < 5000){ ytPlayer.unMute(); }
     }catch(e){}
-  }, 400);
+  }, 500);
 }
-function stopPlayer(){ playerDiv.innerHTML = ''; ytPlayer = null; pendingQuery = null; }
+function stopPlayer(){
+  if(ytPlayer && ytPlayer.destroy){ ytPlayer.destroy(); }
+  ytPlayer = null;
+  document.getElementById('yt-embed').innerHTML = "";
+}
 
-/* ===== Wiki live fallback (internet) ===== */
-async function wikiAnswer(q){
-  // Grab first 1–2 sentences from Wikipedia summary (English).
+/* ===== Wikipedia live fallback ===== */
+async function wikiSummaryByTitle(title){
   try{
-    const term = encodeURIComponent(q.replace(/\?+$/,'').trim());
-    const r = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${term}`, {
-      headers: { 'accept': 'application/json' }
-    });
+    const r = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}`, { headers:{accept:'application/json'} });
     if(!r.ok) return null;
     const j = await r.json();
-    if(j.extract) return j.extract.split('. ').slice(0,2).join('. ') + '.';
+    return j.extract ? j.extract.split('. ').slice(0,2).join('. ') + '.' : null;
+  }catch(e){ return null; }
+}
+async function wikiAnswer(q){
+  // 1) try direct summary
+  let ans = await wikiSummaryByTitle(q.replace(/\?+$/,'').trim());
+  if(ans) return ans;
+  // 2) search for a likely title, then summary
+  try{
+    const s = await fetch(`https://en.wikipedia.org/w/rest.php/v1/search/title?q=${encodeURIComponent(q)}&limit=1`);
+    const sj = await s.json();
+    if(sj && sj.pages && sj.pages.length){
+      const best = sj.pages[0].title;
+      ans = await wikiSummaryByTitle(best);
+      if(ans) return ans;
+    }
   }catch(e){}
   return null;
 }
@@ -289,47 +294,39 @@ function tellDate(){ const d=new Date(); return d.toLocaleDateString(undefined,{
 function helpText(){
   const v = pickVoice(), teAvail = v && /te[-_]/i.test(v.lang);
   return teAvail
-    ? "నేను ఇవి చేయగలను: 1) హౌ ఆర్ యూ. 2) హైదరాబాదు లో వాతావరణం. 3) ప్లే తెలుగు పాటలు. 4) టైమ్ నౌ. 5) స్టాప్ మ్యూజిక్. 6) క్లియర్. 7) ఏ విషయం అడిగినా వికీపీడియా నుంచి సమాధానం ఇవ్వగలను."
-    : "I can do: small talk, weather (e.g., weather in Hyderabad), play Telugu songs, time/date, stop music, clear, and general facts from Wikipedia.";
+    ? "నేను ఇవి చేయగలను: 1) హౌ ఆర్ యూ. 2) హైదరాబాదు లో వాతావరణం. 3) ప్లే తెలుగు పాటలు. 4) టైమ్ నౌ. 5) స్టాప్ మ్యూజిక్. 6) క్లియర్. 7) వికీపీడియా ద్వారా సాధారణ ప్రశ్నలకు సమాధానం."
+    : "I can do: small talk, weather, play Telugu songs, time/date, stop music, clear, plus general facts from Wikipedia.";
 }
 
 async function handle(q){
   if(!q) return;
   addMsg('me', q);
 
-  // help
   if(wantsHelp(q)){ const t = helpText(); addMsg('bot', t); speak(t); stopPlayer(); return; }
 
-  // small talk
   const st = smallTalk(q);
   if(st){ addMsg('bot', st); speak(st); stopPlayer(); return; }
 
-  // date/time
   if(wantsTime(q)){ const t = `⏰ ${tellTime()}`; addMsg('bot', t); speak(t); return; }
   if(wantsDate(q)){ const t = `📅 ${tellDate()}`; addMsg('bot', t); speak(t); return; }
 
-  // weather
   if(wantsWeather(q)){ const say = await weather(parseCity(q)); addMsg('bot', say); speak(say); stopPlayer(); return; }
 
-  // stop / clear
   if(wantsStopMusic(q)){ stopPlayer(); const t = "Stopped the music."; addMsg('bot', t); speak(t); return; }
   if(wantsClear(q)){ chat.innerHTML = ""; stopPlayer(); return; }
 
-  // music
   if(wantsPlay(q)){
     let n = q; const i = n.toLowerCase().indexOf("play"); if(i>=0) n = n.substring(i+4).trim();
     if(!n) n = "Telugu songs";
-    const say = `Playing ${n} here.`;
-    addMsg('bot', say); speak(say);
+    const say = `Playing ${n} here.`; addMsg('bot', say); speak(say);
     playSearch(n);
     return;
   }
 
-  // live internet fallback (Wikipedia)
+  // Wikipedia fallback
   const ans = await wikiAnswer(q);
   if(ans){ addMsg('bot', ans); speak(ans); stopPlayer(); return; }
 
-  // fallback
   const fb = "Say 'help', ask for weather, or say: play Telugu songs.";
   addMsg('bot', fb); speak(fb); stopPlayer();
 }
