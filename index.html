@@ -1,307 +1,263 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#4CAF50">
-  <link rel="manifest" href="manifest.json">
-  <title>ROZ Dashboard</title>
-  <style>
-    body {
-      margin: 0;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: linear-gradient(to right, #eef2f3, #8e9eab);
-      color: #333;
-      transition: background 0.5s ease-in-out;
-    }
-
-    header {
-      background-color: #121212;
-      color: #00ffc8;
-      padding: 1em;
-      text-align: center;
-      font-size: 2em;
-      box-shadow: 0 0 15px #00ffc8;
-    }
-
-    #cameraFeed {
-      display: none;
-      margin: 1em auto;
-      max-width: 100%;
-      height: auto;
-      border: 5px solid #333;
-      border-radius: 10px;
-    }
-
-    .controls, .modes, .upload-section, .camera-toggle, .features {
-      text-align: center;
-      margin: 1em;
-    }
-
-    .controls {
-      display: none;
-    }
-
-    button {
-      margin: 0.5em;
-      padding: 1em;
-      font-size: 1em;
-      border: none;
-      border-radius: 10px;
-      cursor: pointer;
-      background: #4CAF50;
-      color: white;
-      box-shadow: 0 0 15px #4CAF50;
-      transition: transform 0.3s, box-shadow 0.3s;
-    }
-
-    button:hover {
-      transform: scale(1.1);
-      box-shadow: 0 0 30px #45a049;
-    }
-
-    #logs {
-      background-color: #f0f0f0;
-      margin: 1em;
-      padding: 1em;
-      border-radius: 8px;
-      height: 150px;
-      overflow-y: scroll;
-    }
-
-    .analysis-result {
-      text-align: center;
-      margin-top: 1em;
-    }
-
-    .analysis-result img {
-      max-width: 80%;
-      height: auto;
-      border-radius: 10px;
-    }
-
-    .features {
-      display: none;
-      margin: 1.5em auto;
-      padding: 1em;
-      max-width: 800px;
-      background: #fff;
-      border-radius: 10px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
-    }
-
-    a.buy-link {
-      color: #4CAF50;
-      font-weight: bold;
-      text-decoration: none;
-    }
-
-    .market-links {
-      margin-top: 1em;
-    }
-
-    .market-links img {
-      width: 100px;
-      border-radius: 8px;
-      margin: 0.5em;
-    }
-
-    .voice-chat {
-      text-align: center;
-      margin-top: 2em;
-    }
-
-    .voice-chat button {
-      background-color: #ff5722;
-      box-shadow: 0 0 15px #ff5722;
-    }
-  </style>
+<meta charset="utf-8">
+<title>ROZ Voice Bot</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  :root{ --bg:#fff; --ink:#111; --muted:#666; --card:#f5f7fb; --ring:#0ea5e9; }
+  *{ box-sizing:border-box }
+  body{font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif;margin:0;background:var(--bg);color:var(--ink)}
+  header{padding:16px;border-bottom:1px solid #eee;position:sticky;top:0;background:#fff;z-index:10}
+  main{max-width:820px;margin:0 auto;padding:16px}
+  .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+  button,select,input{padding:12px 14px;border:1px solid #ddd;border-radius:12px;background:#fff;font-size:16px}
+  button{cursor:pointer}
+  #talk{background:var(--ring);color:#fff;border-color:var(--ring)}
+  #stop{background:#f3f4f6}
+  #log{margin-top:14px;background:var(--card);border-radius:14px;padding:12px;min-height:150px;white-space:pre-wrap}
+  iframe{width:100%;height:260px;border:0;border-radius:12px;margin-top:10px}
+  .hint{font-size:12px;color:var(--muted)}
+  .pill{display:inline-block;padding:6px 10px;border:1px solid #eee;border-radius:999px;background:#fafafa;margin:2px}
+  .listening{outline:3px solid var(--ring); box-shadow:0 0 0 4px rgba(14,165,233,.1)}
+  .grow{flex:1}
+  a.back{margin-left:auto;text-decoration:none;border:1px solid #eee;border-radius:12px;padding:6px 10px;color:#333}
+</style>
 </head>
-
 <body>
-  <header>🤖 ROZ AI Robot Dashboard</header>
+<header>
+  <div class="row">
+    <strong>🎙️ ROZ Voice Bot</strong>
+    <span class="pill">no install</span><span class="pill">GitHub Pages</span><span class="pill">English/తెలుగు</span>
+    <a href="./" class="back">← Back</a>
+  </div>
+</header>
 
-  <div class="camera-toggle">
-    <button onclick="toggleCamera()" id="cameraToggle">🔴 Turn Camera Off</button>
-    <button onclick="toggleControls()">🎮 Show Controls</button>
+<main>
+  <div class="row" id="controls">
+    <label for="lang">Language:</label>
+    <select id="lang">
+      <option value="en-IN">English (India)</option>
+      <option value="te-IN">తెలుగు (India)</option>
+    </select>
+    <button id="talk">Hold to Talk</button>
+    <button id="stop">Stop Speaking</button>
   </div>
 
-  <video id="cameraFeed" autoplay playsinline></video>
-
-  <div class="controls" id="joystickControls">
-    <button onclick="move('forward')">⬆️ Forward</button>
-    <button onclick="move('left')">⬅️ Left</button>
-    <button onclick="move('stop')">⏹️ Stop</button>
-    <button onclick="move('right')">➡️ Right</button>
-    <button onclick="move('backward')">⬇️ Backward</button>
+  <div class="row" style="margin-top:8px">
+    <input id="text" class="grow" placeholder="Ask: how are you • weather in Hyderabad • play Telugu songs • time now • stop music" />
+    <button id="send">Ask</button>
   </div>
+  <div class="hint">Tip: Use Chrome on mobile/desktop. Mic needs HTTPS (GitHub Pages is OK).</div>
 
-  <div class="modes">
-    <button onclick="switchMode('home')">🏠 Home Guard</button>
-    <button onclick="switchMode('farm')">🌾 Farm</button>
-    <button onclick="switchMode('family')">👨‍👩‍👧‍👦 Family</button>
-  </div>
+  <div id="log"></div>
+  <div id="player"></div>
+</main>
 
-  <div class="features" id="farmFeatures">
-    <div class="upload-section">
-      <h3>📸 Upload Crop Image for Analysis</h3>
-      <input type="file" accept="image/*" onchange="analyzeCrop(event)">
-    </div>
-    <p>📞 Call for Pest Help: 1800-XXX-FARM</p>
-    <p>📰 Market Updates: Tomato - ₹25/kg | Wheat - ₹20/kg</p>
-    <p>🛒 <a href="https://www.amazon.in/s?k=pesticides" class="buy-link" target="_blank">Buy Pesticides on Amazon</a></p>
-    <div class="market-links">
-      <p><strong>🛍️ Popular Pest Products:</strong></p>
-      <a href="https://www.amazon.in/s?k=organic+neem+spray" target="_blank"><img src="https://m.media-amazon.com/images/I/61sz0gUkvCL._AC_UL320_.jpg"></a>
-      <a href="https://www.amazon.in/s?k=plant+fungicide+spray" target="_blank"><img src="https://m.media-amazon.com/images/I/71Ol8JtzVBL._AC_UL320_.jpg"></a>
-    </div>
-  </div>
+<script>
+/* ---------- Elements ---------- */
+const logBox = document.getElementById('log');
+const playerDiv = document.getElementById('player');
+const langSel  = document.getElementById('lang');
+const textIn   = document.getElementById('text');
+const btnSend  = document.getElementById('send');
+const btnTalk  = document.getElementById('talk');
+const btnStop  = document.getElementById('stop');
+const controls = document.getElementById('controls');
 
-  <div class="features" id="homeFeatures">
-    <button onclick="log('🔊 Siren Activated')">🚨 Siren</button>
-    <button onclick="log('📷 Picture Captured')">📸 Capture Picture</button>
-    <p>📁 View saved media and alerts</p>
-  </div>
+/* ---------- Persistence (language & last city) ---------- */
+(function restorePrefs(){
+  const L = localStorage.getItem("roz.lang");
+  if(L) langSel.value = L;
+})();
+langSel.addEventListener('change', ()=>localStorage.setItem("roz.lang", langSel.value));
 
-  <div class="features" id="familyFeatures">
-    <p>🧒 Child Educational Assistant</p>
-    <p>👴 Elderly Care Alerts</p>
-    <p>📚 Homework Helper</p>
-  </div>
+/* ---------- Logging & Speaking ---------- */
+function log(m){ logBox.textContent += m + "\n"; logBox.scrollTop = logBox.scrollHeight; }
 
-  <div id="logs"></div>
-  <div class="analysis-result" id="analysisResult"></div>
+function pickVoiceFor(langCode){
+  const voices = speechSynthesis.getVoices();
+  // Prefer exact language match (e.g., te-IN), else first voice of that language family
+  let v = voices.find(v=>v.lang===langCode) || voices.find(v=>v.lang.startsWith(langCode.slice(0,2)));
+  return v || null;
+}
 
-  <div class="voice-chat">
-    <button onclick="startListening()">🎙️ Ask ROZ (Voice Input)</button>
-  </div>
+function speak(txt){
+  if(!window.speechSynthesis) return alert("Speech Synthesis not supported in this browser.");
+  const u = new SpeechSynthesisUtterance(txt);
+  u.lang = langSel.value;
+  const pref = pickVoiceFor(u.lang);
+  if(pref) u.voice = pref;
+  window.speechSynthesis.cancel(); // stop anything pending
+  window.speechSynthesis.speak(u);
+}
+btnStop.onclick = ()=>window.speechSynthesis.cancel();
+speechSynthesis.onvoiceschanged = ()=>{}; // ensure voices are populated on some browsers
 
-  <script>
-    const logArea = document.getElementById("logs");
-    const video = document.getElementById("cameraFeed");
-    const toggleBtn = document.getElementById("cameraToggle");
-    const joystick = document.getElementById("joystickControls");
-    const featureSections = {
-      farm: document.getElementById("farmFeatures"),
-      home: document.getElementById("homeFeatures"),
-      family: document.getElementById("familyFeatures")
-    };
-    let cameraStream;
+/* ---------- Helpers ---------- */
+function norm(q){ return q.toLowerCase().replace(/\s+/g,' ').trim(); }
 
-    function log(msg) {
-      logArea.innerHTML += `<p>ROZ: ${msg}</p>`;
-      logArea.scrollTop = logArea.scrollHeight;
-      const utterance = new SpeechSynthesisUtterance(msg);
-      speechSynthesis.speak(utterance);
-    }
+function smallTalk(q){
+  const n = norm(q);
+  if(n.includes("how are you") || n.includes("how r u") || n.includes("ela unnaru") || n.includes("meeru ela"))
+    return "I’m good! How can I help you?";
+  if(n==="hi"||n==="hello"||n.includes("namaste")||n.includes("namask"))
+    return "Hello! Ask me for weather or say: play Telugu songs.";
+  if(n.includes("your name") || q.includes("మీ పేరు") || n.includes("mee peru"))
+    return "I’m your ROZ voice bot.";
+  return null;
+}
 
-    function move(direction) {
-      log(`Moving ${direction}`);
-    }
+function parseCity(q){
+  // Try to capture text after "in" or Telugu "lo" including multi-word names
+  // e.g., "weather in new york city" -> "new york city"
+  const mIn = /(?:weather|climate)?\s*in\s+([a-zA-Z\s]+)$/i.exec(q);
+  if(mIn && mIn[1]) return mIn[1].trim();
+  const mLo = /లో\s*([^\?\.]+)$/i.exec(q); // Telugu "lo ..."
+  if(mLo && mLo[1]) return mLo[1].trim();
+  // Fallback to previous saved city
+  const prev = localStorage.getItem("roz.city");
+  return prev || null;
+}
+function saveCity(name){ if(name) localStorage.setItem("roz.city", name); }
 
-    function switchMode(mode) {
-      const themes = {
-        home: 'linear-gradient(to right, #1f4037, #99f2c8)',
-        farm: 'linear-gradient(to right, #a8e063, #56ab2f)',
-        family: 'linear-gradient(to right, #f7971e, #ffd200)'
-      };
-      document.body.style.background = themes[mode] || '#fff';
-      log(`Now in ${mode} mode.`);
+function wantsWeather(q){ const n=norm(q); return n.includes("weather") || q.includes("వాతావరణ"); }
+function wantsPlay(q){ const n=norm(q); return (n.includes("play") && n.includes("song")) || n.includes("telugu song") || q.includes("పాట"); }
+function wantsTime(q){ const n=norm(q); return n.includes("time now") || n.includes("current time") || q.includes("సమయం"); }
+function wantsDate(q){ const n=norm(q); return n.includes("today") || n.includes("date today") || q.includes("తేదీ"); }
+function wantsStopMusic(q){ const n=norm(q); return n.includes("stop music") || n.includes("pause music") || n.includes("close player"); }
+function wantsClear(q){ const n=norm(q); return n==="clear" || n.includes("clear screen") || n.includes("clear chat") || n.includes("erase"); }
+function wantsHelp(q){ const n=norm(q); return n==="help" || n.includes("what can you do") || q.includes("సహాయం"); }
 
-      for (let key in featureSections) {
-        featureSections[key].style.display = 'none';
-      }
-      featureSections[mode].style.display = 'block';
-    }
+async function weather(city){
+  try{
+    if(!city) city = "Hyderabad";
+    const g = await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(city)}&count=1&language=en&format=json`);
+    const gj = await g.json();
+    if(!gj.results || !gj.results.length) return `Sorry, I couldn’t find ${city}.`;
+    const { latitude, longitude, name, country } = gj.results[0];
+    saveCity(name);
+    const w = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,apparent_temperature,weather_code`);
+    const wj = await w.json();
+    if(!wj.current) return "Weather service returned no data.";
+    const t  = Math.round(wj.current.temperature_2m);
+    const tf = Math.round(wj.current.apparent_temperature);
+    const code = wj.current.weather_code;
+    const desc = ({
+      0:"clear sky",1:"mainly clear",2:"partly cloudy",3:"overcast",
+      45:"foggy",48:"rime fog",51:"light drizzle",53:"drizzle",55:"dense drizzle",
+      61:"light rain",63:"rain",65:"heavy rain",71:"light snow",73:"snow",75:"heavy snow",
+      80:"rain showers",81:"heavy showers",82:"violent showers",95:"thunderstorm",
+      96:"thunder w/ hail",99:"severe thunderstorm"
+    })[code] || "moderate";
+    return langSel.value.startsWith("te")
+      ? `${name} లో వాతావరణం: ${desc}. ఉష్ణోగ్రత ${t}°C, అనిపించే ఉష్ణోగ్రత ${tf}°C.`
+      : `Weather in ${name}, ${country}: ${desc}. Temperature ${t}°C, feels like ${tf}°C.`;
+  }catch(e){
+    return "Weather service not reachable right now.";
+  }
+}
 
-    function toggleControls() {
-      joystick.style.display = joystick.style.display === 'block' ? 'none' : 'block';
-    }
+function youtubeEmbedFor(q){
+  const s = encodeURIComponent(q || "Telugu songs");
+  return `https://www.youtube-nocookie.com/embed?autoplay=1&mute=0&listType=search&list=${s}`;
+}
+function stopPlayer(){ playerDiv.innerHTML = ""; }
 
-    async function analyzeCrop(event) {
-      const file = event.target.files[0];
-      if (!file) return;
+function tellTime(){
+  const d = new Date();
+  const opts = { hour: 'numeric', minute: '2-digit' };
+  return d.toLocaleTimeString(undefined, opts);
+}
+function tellDate(){
+  const d = new Date();
+  const opts = { weekday:'long', year:'numeric', month:'long', day:'numeric' };
+  return d.toLocaleDateString(undefined, opts);
+}
 
-      const reader = new FileReader();
-      reader.onload = function () {
-        document.getElementById('analysisResult').innerHTML = `
-          <h4>Analyzing Crop Image...</h4>
-          <img src="${reader.result}" alt="Uploaded Crop Image">
-          <p><strong>Crop Type:</strong> Tomato 🍅</p>
-          <p><strong>Status:</strong> Leaf shows signs of blight disease.</p>
-          <p><strong>Recommendation:</strong> Use natural neem spray. Maintain good soil drainage.</p>
-          <h5>👧 Easy Tip for Kids:</h5>
-          <img src="https://i.imgur.com/RvD5ClF.png" alt="Neem Spray Tip for Kids">
-        `;
-        log("Crop analysis complete. Tomato crop needs neem spray.");
-      };
-      reader.readAsDataURL(file);
-    }
+function helpText(){
+  return langSel.value.startsWith("te")
+    ? "నేను ఇవి చేయగలను: 1) హౌ ఆర్ యూ — నేను సమాధానం ఇస్తాను. 2) హైదరాబాదు లో వాతావరణం — వాతావరణం చెబుతాను. 3) ప్లే తెలుగు పాటలు — యూట్యూబ్ లో ప్లే చేస్తాను. 4) టైమ్ నౌ — ప్రస్తుత సమయం. 5) స్టాప్ మ్యూజిక్ — ప్లేయర్ మూసేస్తాను. 6) క్లియర్ — స్క్రీన్ క్లియర్ చేస్తాను."
+    : "I can do: 1) Small talk (How are you). 2) Weather (e.g., weather in Hyderabad). 3) Play music (play Telugu songs). 4) Time now. 5) Stop music. 6) Clear screen.";
+}
 
-    function startCamera() {
-      navigator.mediaDevices.getUserMedia({ video: true })
-        .then(stream => {
-          cameraStream = stream;
-          video.srcObject = stream;
-          video.style.display = 'block';
-          toggleBtn.textContent = "🔴 Turn Camera Off";
-        })
-        .catch(err => log("Camera access denied."));
-    }
+/* ---------- Main handler ---------- */
+async function handle(q){
+  if(!q) return;
+  log("🧑 You: " + q);
 
-    function stopCamera() {
-      if (cameraStream) {
-        cameraStream.getTracks().forEach(track => track.stop());
-        video.srcObject = null;
-        video.style.display = 'none';
-        toggleBtn.textContent = "🟢 Turn Camera On";
-      }
-    }
+  // Help
+  if(wantsHelp(q)){ const t = helpText(); log("🤖 Bot: " + t); speak(t); stopPlayer(); return; }
 
-    function toggleCamera() {
-      if (video.srcObject) {
-        stopCamera();
-      } else {
-        startCamera();
-      }
-    }
+  // Small talk
+  const st = smallTalk(q);
+  if(st){ log("🤖 Bot: " + st); speak(st); stopPlayer(); return; }
 
-    function startListening() {
-      if (!('webkitSpeechRecognition' in window)) {
-        log("Speech recognition not supported in this browser.");
-        return;
-      }
+  // Date/Time
+  if(wantsTime(q)){ const t = langSel.value.startsWith("te") ? `ఇప్పటి సమయం ${tellTime()}` : `The time is ${tellTime()}.`; log("🤖 Bot: "+t); speak(t); return; }
+  if(wantsDate(q)){ const t = langSel.value.startsWith("te") ? `ఈ రోజు ${tellDate()}` : `Today is ${tellDate()}.`; log("🤖 Bot: "+t); speak(t); return; }
 
-      const recognition = new webkitSpeechRecognition();
-      recognition.continuous = false;
-      recognition.interimResults = false;
-      recognition.lang = 'en-IN';
+  // Weather
+  if(wantsWeather(q)){
+    const say = await weather(parseCity(q));
+    log("🤖 Bot: " + say); speak(say); stopPlayer(); return;
+  }
 
-      recognition.start();
+  // Stop music / Clear
+  if(wantsStopMusic(q)){ stopPlayer(); const t = langSel.value.startsWith("te") ? "మ్యూజిక్ ఆపేశాను." : "Stopped the music."; log("🤖 Bot: "+t); speak(t); return; }
+  if(wantsClear(q)){ logBox.textContent = ""; stopPlayer(); return; }
 
-      recognition.onresult = function (event) {
-        const text = event.results[0][0].transcript;
-        log(`You said: ${text}`);
-        setTimeout(() => {
-          log("Analyzing your request...");
-          log("ROZ will get smarter and respond soon!");
-        }, 1000);
-      };
+  // Play song
+  if(wantsPlay(q)){
+    let n = q;
+    const i = n.toLowerCase().indexOf("play");
+    if(i>=0) n = n.substring(i+4).trim();
+    if(!n) n = "Telugu songs";
+    const say = langSel.value.startsWith("te") ? `${n} ప్లే చేస్తున్నాను.` : `Playing ${n} on YouTube.`;
+    log("🤖 Bot: " + say); speak(say);
+    playerDiv.innerHTML = `<iframe allow="autoplay; encrypted-media" src="${youtubeEmbedFor(n)}"></iframe>`;
+    return;
+  }
 
-      recognition.onerror = function (event) {
-        log("Voice input error: " + event.error);
-      };
-    }
+  // Fallback
+  const fb = langSel.value.startsWith("te")
+    ? "అది అర్థం కాలేదు. 'హెల్ప్' అని చెప్పండి లేదా వాతావరణం అడగండి లేదా తెలుగు పాటలు ప్లే చేయమని చెప్పండి."
+    : "I didn’t get that. Say 'help', ask for weather, or say: play Telugu songs.";
+  log("🤖 Bot: " + fb); speak(fb); stopPlayer();
+}
 
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('service-worker.js')
-        .then(() => log("✅ Service Worker Registered for Offline Support"))
-        .catch(error => log("❌ Service Worker Error: " + error));
-    }
+/* ---------- UI wiring ---------- */
+btnSend.onclick = ()=>handle(textIn.value.trim());
 
-    startCamera();
-  </script>
+let rec, listening=false, sttSupported = ('webkitSpeechRecognition' in window);
+if(sttSupported){
+  rec = new webkitSpeechRecognition();
+  rec.continuous=false; rec.interimResults=false;
+  rec.onresult = e => { const t = e.results[0][0].transcript; handle(t); };
+  rec.onend = ()=> { listening=false; controls.classList.remove('listening'); };
+} else {
+  btnTalk.disabled = true;
+  log("⚠️ Your browser doesn’t support speech recognition. Type your query.");
+}
+
+function startRec(){
+  if(!rec) return;
+  try{
+    rec.lang = langSel.value;
+    listening = true; controls.classList.add('listening');
+    rec.start(); log("🎤 (listening)");
+  }catch(e){ /* ignore */ }
+}
+function stopRec(){
+  if(rec && listening){
+    rec.stop();
+  }
+}
+btnTalk.onmousedown = startRec;  btnTalk.ontouchstart = startRec;
+btnTalk.onmouseup   = stopRec;   btnTalk.ontouchend   = stopRec; btnTalk.onmouseleave = stopRec;
+
+/* Keyboard: Enter to send */
+textIn.addEventListener('keydown', (e)=>{ if(e.key==="Enter"){ btnSend.click(); }});
+</script>
 </body>
-
 </html>
