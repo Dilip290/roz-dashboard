@@ -107,7 +107,6 @@
 <script>
 /* ===== elements ===== */
 const chat = document.getElementById('chat');
-const playerDiv = document.getElementById('player');
 const sttLangSel = document.getElementById('sttLang');
 const ttsVoiceSel = document.getElementById('ttsVoice');
 const textIn = document.getElementById('text');
@@ -232,29 +231,62 @@ async function weather(city){
   }catch(e){ return "Weather service not reachable right now."; }
 }
 
-/* ===== YouTube player (autoplay in-page) ===== */
+/* ===== YouTube player (autoplay in-page, with retries) ===== */
 let ytReady = false, ytPlayer = null, lastGestureTs = 0;
+let currentQuery = "", variantIndex = 0;
 function onYouTubeIframeAPIReady(){ ytReady = true; }
 
 function ensurePlayer(){
   if(ytPlayer || !ytReady) return;
   ytPlayer = new YT.Player('yt-embed', {
     height: '250', width: '100%',
-    playerVars: { autoplay: 1, mute: 1 },
-    events: { 'onReady': ()=>{} }
+    playerVars: { autoplay: 1, mute: 1, playsinline: 1, origin: location.origin },
+    events: {
+      'onReady': ()=>{},
+      'onError': (e)=> {
+        // 2=invalid, 5=HTML5 error, 101/150=embedding disabled
+        if([2,5,101,150].includes(e.data)){
+          tryNextVariant();
+        }
+      }
+    }
   });
 }
-function playSearch(q){
-  ensurePlayer();
-  if(!ytPlayer || !ytPlayer.loadPlaylist){ return; }
-  ytPlayer.loadPlaylist({ listType:"search", list:q, index:0, startSeconds:0, suggestedQuality:"default" });
-  // unmute only if there was a recent user gesture
+function queryVariants(q){
+  return [
+    q,
+    `${q} lyrics`,
+    `${q} audio`,
+    `${q} jukebox`,
+    `${q} video song`,
+    `${q} (topic)`
+  ];
+}
+function loadVariant(q, idx){
+  const list = queryVariants(q);
+  const use = list[Math.min(idx, list.length-1)];
+  ytPlayer.loadPlaylist({ listType: "search", list: use, index: 0, startSeconds: 0, suggestedQuality: "default" });
   setTimeout(()=>{
     try{
       ytPlayer.playVideo();
       if(Date.now() - lastGestureTs < 5000){ ytPlayer.unMute(); }
     }catch(e){}
   }, 500);
+}
+function tryNextVariant(){
+  variantIndex += 1;
+  if(variantIndex >= queryVariants(currentQuery).length){
+    addMsg('bot', "That video wouldn’t embed. Trying a different song…");
+    variantIndex = 1;
+  }
+  loadVariant(currentQuery, variantIndex);
+}
+function playSearch(q){
+  currentQuery = q || "Telugu songs";
+  variantIndex = 0;
+  ensurePlayer();
+  if(!ytPlayer || !ytPlayer.loadPlaylist){ return; }
+  loadVariant(currentQuery, variantIndex);
 }
 function stopPlayer(){
   if(ytPlayer && ytPlayer.destroy){ ytPlayer.destroy(); }
@@ -263,6 +295,21 @@ function stopPlayer(){
 }
 
 /* ===== Wikipedia live fallback ===== */
+function localeIsIndia(){
+  try { return (navigator.language || 'en-IN').toLowerCase().endsWith('-in'); }
+  catch(e){ return true; }
+}
+function normalizeQuestionForWiki(q){
+  let s = q.toLowerCase().trim();
+  if((s === "who is the prime minister" || s === "prime minister") && localeIsIndia()){
+    return "Prime Minister of India";
+  }
+  if((s === "who is the president" || s === "president") && localeIsIndia()){
+    return "President of India";
+  }
+  s = s.replace(/^(who|what)\s+is\s+/i, "").replace(/^tell me about\s+/i,"");
+  return s.length ? s : q;
+}
 async function wikiSummaryByTitle(title){
   try{
     const r = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(title)}`, { headers:{accept:'application/json'} });
@@ -272,12 +319,13 @@ async function wikiSummaryByTitle(title){
   }catch(e){ return null; }
 }
 async function wikiAnswer(q){
-  // 1) try direct summary
-  let ans = await wikiSummaryByTitle(q.replace(/\?+$/,'').trim());
+  const normalized = normalizeQuestionForWiki(q).replace(/\?+$/,'').trim();
+  // 1) direct summary
+  let ans = await wikiSummaryByTitle(normalized);
   if(ans) return ans;
-  // 2) search for a likely title, then summary
+  // 2) search → best title → summary
   try{
-    const s = await fetch(`https://en.wikipedia.org/w/rest.php/v1/search/title?q=${encodeURIComponent(q)}&limit=1`);
+    const s = await fetch(`https://en.wikipedia.org/w/rest.php/v1/search/title?q=${encodeURIComponent(normalized)}&limit=1`);
     const sj = await s.json();
     if(sj && sj.pages && sj.pages.length){
       const best = sj.pages[0].title;
@@ -332,8 +380,8 @@ async function handle(q){
 }
 
 /* ===== UI ===== */
-btnSend.onclick = ()=>handle(textIn.value.trim());
-textIn.addEventListener('keydown', e=>{ if(e.key==='Enter') btnSend.click(); });
+btnSend.onclick = ()=>{ lastGestureTs = Date.now(); handle(textIn.value.trim()); };
+textIn.addEventListener('keydown', e=>{ if(e.key==='Enter'){ lastGestureTs = Date.now(); btnSend.click(); }});
 
 /* speech recognition (press & hold mic) */
 let rec=null, listening=false;
@@ -345,7 +393,7 @@ if('webkitSpeechRecognition' in window){
   addMsg('bot', "⚠️ Your browser doesn’t support mic recognition. Type your query.");
 }
 function startRec(){
-  lastGestureTs = Date.now(); // mark user gesture for autoplay-unmute
+  lastGestureTs = Date.now(); // used to allow unmute after user gesture
   if(!rec) return;
   try{
     rec.lang = sttLangSel.value;
